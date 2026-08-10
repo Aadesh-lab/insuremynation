@@ -14,6 +14,7 @@ import {
   staggerItemFade,
   staggerItemScale,
   staggerPassthrough,
+  VIEWPORT,
 } from '../components/Reveal';
 import { BLUE, EMAIL, EMAIL_HREF, PHONE, PHONE_HREF } from '../data/site';
 
@@ -101,7 +102,7 @@ export default function InsurancePage({ product }) {
           data-r="htitleblock"
           initial="hidden"
           animate="visible"
-          variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.12, delayChildren: 0.15 } } }}
+          variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.06, delayChildren: 0.08 } } }}
           style={{
             position: 'absolute',
             left: 96,
@@ -280,10 +281,10 @@ export default function InsurancePage({ product }) {
         >
           <motion.div
             data-r="cimg"
-            initial={{ opacity: 0, scale: 1.04 }}
+            initial={{ opacity: 0, scale: 1.03 }}
             whileInView={{ opacity: 1, scale: 1 }}
-            viewport={{ once: true, amount: 0.15 }}
-            transition={{ duration: 0.9, ease: EASE }}
+            viewport={VIEWPORT}
+            transition={{ duration: 0.5, ease: EASE }}
             style={{
               position: 'relative',
               width: coverArt.width,

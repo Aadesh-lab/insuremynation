@@ -139,7 +139,7 @@ export default function About() {
           animate="visible"
           variants={{
             hidden: {},
-            visible: { transition: { staggerChildren: 0.12, delayChildren: 0.15 } },
+            visible: { transition: { staggerChildren: 0.06, delayChildren: 0.08 } },
           }}
           style={{
             position: 'absolute',

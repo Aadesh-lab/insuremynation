@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { EASE, VIEWPORT, prefersReducedMotion } from './Reveal';
 import { EXPERT_COPY, PHONE_HREF, RED, WHATSAPP, BLUE } from '../data/site';
 
 const ctaBase = {
@@ -15,13 +16,14 @@ const ctaBase = {
 };
 
 export default function TalkToExperts({ padding = '0 0 104px', animate = false }) {
-  const Row = animate ? motion.div : 'div';
-  const rowProps = animate
+  const animated = animate && !prefersReducedMotion();
+  const Row = animated ? motion.div : 'div';
+  const rowProps = animated
     ? {
-        initial: { opacity: 0, y: 28 },
+        initial: { opacity: 0, y: 16 },
         whileInView: { opacity: 1, y: 0 },
-        viewport: { once: true, amount: 0.25 },
-        transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] },
+        viewport: VIEWPORT,
+        transition: { duration: 0.4, ease: EASE },
       }
     : {};
 

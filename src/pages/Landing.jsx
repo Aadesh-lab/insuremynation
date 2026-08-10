@@ -142,6 +142,11 @@ function HeroSlot({ slotIndex, step, ...rest }) {
             key={src}
             src={src}
             alt=""
+            decoding="async"
+            // Only the frame on screen competes with the hero background for
+            // bandwidth; the other four in each slot are pre-warmed for the
+            // crossfade and can wait.
+            fetchpriority={on ? 'high' : 'low'}
             style={{
               position: 'absolute',
               inset: 0,
@@ -543,6 +548,7 @@ export default function Landing() {
                   >
                     <img
                       decoding="async"
+                      loading="lazy"
                       src={row.image}
                       alt=""
                       style={{

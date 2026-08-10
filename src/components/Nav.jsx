@@ -39,6 +39,10 @@ export default function Nav({
       data-r="navlogo"
       src={logo}
       alt="InsureNation"
+      width={267}
+      height={58}
+      decoding="async"
+      fetchpriority="high"
       style={{ width: 267, height: 58, objectFit: 'contain', flexShrink: 0 }}
     />
   );

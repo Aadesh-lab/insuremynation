@@ -30,7 +30,14 @@ export default function App() {
           <Route
             key={product.slug}
             path={product.slug}
-            element={<InsurancePage product={product} />}
+            // The key belongs on the element too, not just the Route. All six
+            // products render the same component type at the same position, so
+            // without it React reuses the instance and its DOM across a
+            // product-to-product navigation: the scroll reveals have already
+            // fired `once`, so any block that hadn't animated yet stays at
+            // opacity 0 until a reload, and the quote form keeps whatever was
+            // typed on the previous product.
+            element={<InsurancePage key={product.slug} product={product} />}
           />
         ))}
         <Route path="*" element={<Navigate to="/" replace />} />

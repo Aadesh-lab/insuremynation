@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { VIEWPORT, prefersReducedMotion } from './Reveal';
 import { BLUE, PARTNERS } from '../data/site';
 
 /**
@@ -6,23 +7,24 @@ import { BLUE, PARTNERS } from '../data/site';
  * Landing / About use `104px 0`, the product pages use `0 0 104px`.
  */
 export default function Partners({ padding = '104px 0', animate = false }) {
-  const Grid = animate ? motion.div : 'div';
-  const Logo = animate ? motion.img : 'img';
+  const animated = animate && !prefersReducedMotion();
+  const Grid = animated ? motion.div : 'div';
+  const Logo = animated ? motion.img : 'img';
 
-  const gridProps = animate
+  const gridProps = animated
     ? {
         initial: 'hidden',
         whileInView: 'visible',
-        viewport: { once: true, amount: 0.2 },
-        variants: { hidden: {}, visible: { transition: { staggerChildren: 0.05 } } },
+        viewport: VIEWPORT,
+        variants: { hidden: {}, visible: { transition: { staggerChildren: 0.03 } } },
       }
     : {};
 
-  const logoProps = animate
+  const logoProps = animated
     ? {
         variants: {
-          hidden: { opacity: 0, scale: 0.9 },
-          visible: { opacity: 1, scale: 1, transition: { duration: 0.4, ease: 'easeOut' } },
+          hidden: { opacity: 0, scale: 0.92 },
+          visible: { opacity: 1, scale: 1, transition: { duration: 0.35, ease: 'easeOut' } },
         },
       }
     : {};
@@ -70,6 +72,7 @@ export default function Partners({ padding = '104px 0', animate = false }) {
             key={name}
             data-r="plogo"
             decoding="async"
+            loading="lazy"
             src={`/assets/${name}.webp`}
             alt=""
             {...logoProps}
