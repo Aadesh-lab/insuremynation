@@ -1,0 +1,29 @@
+/* Hover / focus states the prototype expressed through its `style-hover` and
+   `style-focus` attributes. Those mutated the inline style directly, so the
+   equivalents here need `!important` to beat the inline styles they override. */
+
+.dc-menu-item:hover {
+  background: rgba(0, 74, 173, 0.07) !important;
+}
+
+.dc-input:focus,
+.dc-textarea:focus {
+  border-bottom: 1px solid rgb(0, 74, 173) !important;
+}
+
+.dc-cta-call:hover {
+  background: rgb(172, 32, 35) !important;
+}
+
+.dc-cta-whatsapp:hover {
+  background: rgba(255, 255, 255, 0.88) !important;
+}
+
+.dc-reset-button {
+  appearance: none;
+  border: 0;
+  margin: 0;
+  font: inherit;
+  text-align: inherit;
+  background: none;
+}
