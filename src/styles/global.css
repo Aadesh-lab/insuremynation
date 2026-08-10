@@ -1,14 +1,9 @@
-/* ==========================================================================
-   InsureNation — global styles
 
-   The design handoff drives every element off inline styles sized against a
-   1728px canvas, then reshapes them through `[data-r="..."]` media queries.
-   Those media queries are reproduced here verbatim so the responsive
-   behaviour is identical to the prototype. Because all pages live in one SPA
-   bundle, page-specific blocks are scoped by a root page class (`.p-landing`,
-   `.p-about`, `.p-sub`, ...) — several `data-r` names mean different things on
-   different pages.
-   ========================================================================== */
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
 
 body {
   margin: 0;
@@ -41,6 +36,116 @@ textarea::placeholder {
   }
   to {
     transform: translateX(-50%);
+  }
+}
+
+@media (min-width: 1729px) {
+  [data-r='root'] {
+    --bleed: calc((100% - 1728px) / 2);
+  }
+
+  [data-r='root'],
+  [data-r='nav'],
+  [data-r='partners'],
+  [data-r='footer'],
+  [data-r='srow'],
+  [data-r='hero'],
+  [data-r='abhero'],
+  [data-r='services'],
+  [data-r='badges'],
+  [data-r='tsec'],
+  [data-r='why'],
+  [data-r='perks'],
+  [data-r='cover'],
+  [data-r='quote'],
+  [data-r='expert'],
+  [data-r='intro'],
+  [data-r='vm'],
+  [data-r='team'],
+  [data-r='rev'],
+  [data-r='blocks'] {
+    width: 100% !important;
+  }
+
+  /* Shared chrome */
+  [data-r='nav'] {
+    padding-left: calc(100px + var(--bleed)) !important;
+    padding-right: calc(100px + var(--bleed)) !important;
+  }
+  [data-r='footer'] {
+    padding-left: calc(44px + var(--bleed)) !important;
+    padding-right: calc(44px + var(--bleed)) !important;
+  }
+
+  /* Full-bleed service / building-block rows keep their content centred */
+  [data-r='srow'] {
+    padding-left: calc(48px + var(--bleed)) !important;
+    padding-right: calc(48px + var(--bleed)) !important;
+  }
+  [data-r='snum'] {
+    left: calc(48px + var(--bleed)) !important;
+  }
+  [data-r='stag'] {
+    right: calc(48px + var(--bleed)) !important;
+  }
+  .p-landing [data-r='simg'] {
+    left: calc(130px + var(--bleed)) !important;
+  }
+
+  /* Landing hero */
+  .p-landing [data-r='herobg'] {
+    width: 100% !important;
+  }
+  .p-landing [data-r='gal'] {
+    left: calc(116px + var(--bleed)) !important;
+  }
+  .p-landing [data-r='headline'] {
+    left: calc(93px + var(--bleed)) !important;
+  }
+  .p-landing [data-r='heroarrows'] {
+    left: auto !important;
+    right: calc(40px + var(--bleed)) !important;
+  }
+  .p-landing [data-r='badges'] {
+    padding-left: calc(96px + var(--bleed)) !important;
+    padding-right: calc(96px + var(--bleed)) !important;
+  }
+  .p-landing [data-r='tsec'] {
+    padding-left: calc(48px + var(--bleed)) !important;
+    padding-right: calc(48px + var(--bleed)) !important;
+  }
+  .p-landing [data-r='tleft'] {
+    width: auto !important;
+    flex: 1 1 auto !important;
+  }
+
+  /* Sub-page and About heroes: hold the design height instead of growing
+     16:9 with the viewport, which would push the fold off tall screens. */
+  .p-sub [data-r='hero'],
+  .p-about [data-r='abhero'] {
+    max-height: 972px !important;
+  }
+  [data-r='htitleblock'],
+  [data-r='atitleblock'] {
+    left: calc(96px + var(--bleed)) !important;
+  }
+
+  /* Body sections — all built on the design's 96px gutter */
+  .p-sub [data-r='why'],
+  .p-sub [data-r='perks'],
+  .p-sub [data-r='cover'],
+  .p-sub [data-r='quote'],
+  .p-about [data-r='intro'],
+  .p-about [data-r='badges'],
+  .p-about [data-r='vm'],
+  .p-about [data-r='team'],
+  .p-about [data-r='rev'] {
+    padding-left: calc(96px + var(--bleed)) !important;
+    padding-right: calc(96px + var(--bleed)) !important;
+  }
+  [data-r='expert'] > div {
+    padding-left: calc(96px + var(--bleed)) !important;
+    padding-right: calc(96px + var(--bleed)) !important;
   }
 }
 
@@ -125,6 +230,36 @@ textarea::placeholder {
     line-height: 1.35 !important;
     min-width: 0 !important;
     overflow-wrap: anywhere !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Shared: small tablet / large phone landscape
+
+   The header keeps its full-size logo, links and CTA down to the 760px mobile
+   switch, which pushes the row past the viewport — the CTA was being clipped
+   by the page's `overflow: hidden`. Step the header down one size first.
+   -------------------------------------------------------------------------- */
+@media (max-width: 1100px) {
+  [data-r='nav'] {
+    padding: 0 24px !important;
+  }
+  [data-r='navlogo'] {
+    width: 176px !important;
+    height: 38px !important;
+  }
+  [data-r='navlinks'] > div {
+    padding: 14px 12px !important;
+  }
+  [data-r='navlinks'] a {
+    font-size: 16px !important;
+  }
+  [data-r='cta'] {
+    width: 164px !important;
+    height: 46px !important;
+  }
+  [data-r='cta'] a {
+    font-size: 16px !important;
   }
 }
 
@@ -570,8 +705,10 @@ textarea::placeholder {
 }
 
 @media (max-width: 1200px) {
+  /* 16:9 leaves the hero too short for the title block once the viewport
+     narrows, so the eyebrow slid up behind the nav. Hold a taller floor. */
   .p-sub [data-r='hero'] {
-    min-height: 460px !important;
+    min-height: 560px !important;
   }
   .p-sub [data-r='htitle'] {
     font-size: 46px !important;
@@ -818,7 +955,7 @@ textarea::placeholder {
 
 @media (max-width: 1200px) {
   .p-about [data-r='abhero'] {
-    min-height: 460px !important;
+    min-height: 560px !important;
   }
   .p-about [data-r='atitle'] {
     font-size: 46px !important;
