@@ -204,7 +204,7 @@ export default function ClaimSupport() {
             width: '100%',
           }}
         >
-          <Reveal style={{ width: 520, flexShrink: 0 }}>
+          <Reveal data-r="wheadwrap" style={{ width: 520, flexShrink: 0 }}>
             <SplitHeading
               data-r="whead"
               lines={['Grievances', 'Deserve An', 'Expert']}

@@ -144,7 +144,7 @@ export default function Contact() {
           />
         </div>
 
-        <Nav variant="white" active="insurance" />
+        <Nav variant="white" active="contact" />
 
         <motion.div
           data-r="htitleblock"
@@ -218,7 +218,7 @@ export default function Contact() {
             width: '100%',
           }}
         >
-          <Reveal style={{ width: 520, flexShrink: 0 }}>
+          <Reveal data-r="wheadwrap" style={{ width: 520, flexShrink: 0 }}>
             <SplitHeading
               data-r="whead"
               lines={['One Desk', 'For Every', 'Question']}

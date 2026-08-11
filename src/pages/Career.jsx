@@ -143,7 +143,7 @@ export default function Career() {
           />
         </div>
 
-        <Nav variant="white" active="insurance" />
+        <Nav variant="white" active="career" />
 
         <motion.div
           data-r="htitleblock"
@@ -217,7 +217,7 @@ export default function Career() {
             width: '100%',
           }}
         >
-          <Reveal style={{ width: 520, flexShrink: 0 }}>
+          <Reveal data-r="wheadwrap" style={{ width: 520, flexShrink: 0 }}>
             <SplitHeading
               data-r="whead"
               lines={['Learn From', 'Industry', 'Experts']}
