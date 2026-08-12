@@ -39,4 +39,5 @@ The design prototype sizes everything with inline styles against a 1728px canvas
 ### Images
 
 - `public/assets/` is generated output (lossless WebP + SVG icons) — regenerate via `npm run images` rather than editing files by hand.
-- Hero photos carry a blue gradient-map treatment. `scripts/blue-duotone-lut.json` is that treatment recovered from the handoff; entries marked `duotone: true` in `scripts/convert-images.mjs` get the LUT applied before encoding (currently only the Contact hero, whose treated export was missing from the handoff).
+- The handoff's hero and cover-art photos carried a blue gradient-map treatment. These have since been replaced with the natural photography, so no image in `public/assets/` is duotoned. `scripts/blue-duotone-lut.json` is that treatment recovered from the handoff and `duotone: true` in `scripts/convert-images.mjs` still applies it, but no entry sets the flag — both are kept only in case a treated image has to be rebuilt from raw source.
+- The natural replacements were encoded from stock PNGs that are no longer in the tree, at the pixel dimensions of the duotoned files they replaced, so framing matches. They are lossy WebP (q90) rather than the lossless q100 the rest of `public/assets/` uses, and `npm run images` will not reproduce them.

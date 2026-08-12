@@ -6,6 +6,12 @@
  * nav, pages with a darkened hero switch to white.
  * `heroScrim` is the extra darkening layer some heroes carry beneath the shared
  * top-to-bottom wash.
+ *
+ * `coverArt` is the exception to the verbatim rule. The handoff gave each one a
+ * fixed pixel height that matched its own crop; the art has since been replaced
+ * with uncropped 3:4 images (life 2:3). The heights are gone and `aspectRatio`
+ * carries each file's real ratio, so the box always matches the image and
+ * `background-size: cover` has nothing to crop at any width.
  */
 
 const SCRIM =
@@ -62,8 +68,7 @@ export const PRODUCTS = {
       image: '/assets/health-cover.webp',
       position: 'center center',
       width: 641,
-      aspectRatio: '760/894',
-      height: 1042,
+      aspectRatio: '3/4',
       alignSelf: 'flex-start',
     },
     cover: {
@@ -131,8 +136,7 @@ export const PRODUCTS = {
       image: '/assets/life-cover.webp',
       position: 'center center',
       width: 600,
-      aspectRatio: '4/5',
-      height: 987,
+      aspectRatio: '2/3',
       alignSelf: 'flex-start',
     },
     cover: {
@@ -200,8 +204,7 @@ export const PRODUCTS = {
       image: '/assets/car-cover.webp',
       position: 'center center',
       width: 600,
-      aspectRatio: '4/5',
-      height: 1014,
+      aspectRatio: '3/4',
       alignSelf: 'flex-start',
     },
     cover: {
@@ -267,10 +270,9 @@ export const PRODUCTS = {
     ],
     coverArt: {
       image: '/assets/bike-cover.webp',
-      position: '27% center',
+      position: 'center center',
       width: 600,
-      aspectRatio: '3/2',
-      height: 959,
+      aspectRatio: '3/4',
       alignSelf: 'flex-start',
     },
     cover: {
@@ -339,7 +341,6 @@ export const PRODUCTS = {
       position: 'center center',
       width: 600,
       aspectRatio: '3/4',
-      height: 931,
       alignSelf: 'flex-start',
     },
     cover: {
@@ -407,9 +408,8 @@ export const PRODUCTS = {
       image: '/assets/marine-cover.webp',
       position: 'center center',
       width: 597,
-      aspectRatio: null,
-      height: 959,
-      alignSelf: 'stretch',
+      aspectRatio: '3/4',
+      alignSelf: 'flex-start',
     },
     cover: {
       heading: ['Cargo, Hull', 'And Liability'],

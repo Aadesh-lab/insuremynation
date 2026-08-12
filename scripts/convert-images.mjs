@@ -24,17 +24,16 @@ const outDir = path.join(root, 'public', 'assets');
 // Full-bleed hero photos that live at the project root rather than in assets/.
 // Renamed to the short slugs the React pages reference.
 //
-// `duotone: true` marks images supplied as untreated stock. Every hero in the
-// design carries a blue gradient map; the handoff bundle ships those already
-// baked in, but where only the raw source survived we re-apply the treatment
-// here so the page matches the rest of the site.
+// `duotone: true` re-applies the design's blue gradient map to an image supplied
+// as untreated stock. The heroes have since been switched to their natural
+// photography, so no entry sets it — the flag and `applyDuotone` are kept for
+// the case where a treated hero has to be rebuilt from raw source.
 const rootImages = {
   'young-happy-couple-making-agreement-with-msjbwo1w-we1a.png': { slug: 'landing-hero' },
   'young-happy-parents-enjoying-coloring-wi-msjcakqy-j5k5.png': { slug: 'claim-hero' },
   'team-business-people-stacking-hands-1-msjbz9o3-tjbj.png': { slug: 'about-hero' },
   'contact-us-customer-support-hotline-people-connect-call-customer-support.jpg': {
     slug: 'contact-hero',
-    duotone: true,
   },
 };
 

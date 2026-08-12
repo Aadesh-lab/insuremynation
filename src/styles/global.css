@@ -1094,13 +1094,18 @@ textarea::placeholder {
     flex-direction: column !important;
     gap: 36px !important;
   }
+  /* Cover art, stacked. Deliberately no `aspect-ratio` here: each product sets
+     its file's own ratio inline (products.js), and overriding it to a single
+     value is what used to crop the art. Width is capped rather than height for
+     the same reason — a max-height would clamp the box off its ratio and
+     `cover` would start cropping again. */
   .p-sub [data-r='cimg'] {
     width: 100% !important;
+    max-width: 460px !important;
     flex: 0 0 auto !important;
-    align-self: stretch !important;
-    aspect-ratio: 4/5 !important;
+    align-self: center !important;
     height: auto !important;
-    max-height: 720px !important;
+    max-height: none !important;
   }
   .p-sub [data-r='cright'] {
     width: auto !important;
@@ -1215,9 +1220,9 @@ textarea::placeholder {
   .p-sub [data-r='psub'] {
     font-size: 14px !important;
   }
-  .p-sub [data-r='cimg'] {
-    max-height: 560px !important;
-  }
+  /* Cover art needs nothing extra here — the <=1200px rule already caps its
+     width and lets each product's own ratio set the height, so it is never
+     cropped at any phone size. */
   .p-sub [data-r='chead'] {
     font-size: 21px !important;
   }
@@ -1276,27 +1281,10 @@ textarea::placeholder {
   }
 }
 
-/* Health is the one product whose cover artwork is laid out to `contain`. */
-@media (max-width: 1200px) {
-  .p-sub[data-product='health'] [data-r='cimg'] {
-    width: 100% !important;
-    flex: 0 0 auto !important;
-    align-self: stretch !important;
-    aspect-ratio: auto !important;
-    height: 480px !important;
-    max-height: none !important;
-    background-color: rgb(240, 246, 253) !important;
-    background-size: contain !important;
-    background-position: center bottom !important;
-  }
-}
-
-@media (max-width: 760px) {
-  .p-sub[data-product='health'] [data-r='cimg'] {
-    height: 360px !important;
-    max-height: none !important;
-  }
-}
+/* Health used to need its own `contain` layout here: its cover art was a
+   portrait product shot that the shared 4/5 box cropped. Its art is now the
+   same 3:4 as the other products and the shared rule shows it whole, so the
+   special case is gone. */
 
 /* ==========================================================================
    About page
