@@ -117,7 +117,7 @@ export default function ClaimSupport() {
             style={{
               position: 'absolute',
               inset: 0,
-              background: 'url("/assets/claim-hero-parents.webp") center / cover no-repeat',
+              background: 'url("/assets/claim-hero.webp") center / cover no-repeat',
             }}
           />
           <div

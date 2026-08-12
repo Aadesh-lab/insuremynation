@@ -30,25 +30,25 @@ const TEAM = [
   {
     name: 'Nehal Kumar',
     role: 'Co-Founder & Chief Executive',
-    file: 'nehal.webp',
+    file: 'team-nehal.webp',
     bio: 'MBA from IMT Ghaziabad and 19+ years as a retail financial professional. A founder member of Niva Bupa (formerly Max Bupa Health Insurance), he has also worked with HDFC Bank, Nippon AMC and Kotak Mahindra Bank. He was instrumental in building a profitable HNI-focused direct sales distribution with customer service at its core. An avid photographer who keeps a learning attitude towards life.',
   },
   {
     name: 'Parvesh Kumar',
     role: 'Co-Founder & Chief Business Officer',
-    file: 'parvesh-kumar.webp',
+    file: 'team-parvesh-kumar.webp',
     bio: '15+ years of leadership in health and life insurance. As a founder member of direct sales distribution at Niva Bupa, he delivered profitable growth through large team management, P&L ownership and HNI relationship management. Previously with Aviva and MetLife. B.Com from Delhi University and a passionate cricketer.',
   },
   {
     name: 'Deepak Kr Sharma',
     role: 'Business Head - Health Insurance',
-    file: 'deepak.webp',
+    file: 'team-deepak.webp',
     bio: '7+ years in insurance - life cover at HDFC Life, then health insurance expertise at Niva Bupa, where he played a big role in the success of direct sales. He believes recommending solutions based on a person’s actual needs is the key to relationship management. B.Com from Delhi University.',
   },
   {
     name: 'Anubhav Adya',
     role: 'Business Head - Direct Sales',
-    file: 'anubhav.webp',
+    file: 'team-anubhav.webp',
     bio: '6+ years in health insurance. A founder member of the Any Time Health initiative at CyberHub for Niva Bupa - an industry-first digital sales and service machine - and helped build point-of-care touchpoints in hospitals. His expertise is HNI relationship management. Graduate of IP University and a massive cricket buff.',
   },
 ];
@@ -118,7 +118,7 @@ export default function About() {
             top: 0,
             width: '100%',
             height: '100%',
-            background: 'url("/assets/about-hero-team.webp") center / cover no-repeat',
+            background: 'url("/assets/about-hero.webp") center / cover no-repeat',
           }}
         />
         <div

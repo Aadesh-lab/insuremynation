@@ -24,7 +24,7 @@ export const PARTNERS = [
   'partner-1',
   'partner-2',
   'partner-3',
-  'partner-4-cropped',
+  'partner-4',
   'partner-5',
   'partner-6',
   'partner-7',

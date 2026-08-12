@@ -818,6 +818,10 @@ textarea::placeholder {
     top: 0 !important;
     white-space: normal !important;
     font-size: 16px !important;
+    /* The 1200px block right-aligns the tagline in a 200px column; once the row
+       stacks it reads as one left-aligned line under the title. */
+    max-width: none !important;
+    text-align: left !important;
   }
   .p-landing [data-r='simg'] {
     position: relative !important;
@@ -827,7 +831,15 @@ textarea::placeholder {
     width: 100% !important;
     height: 170px !important;
     border-radius: 22px !important;
-    margin: 10px 0 4px !important;
+    /* Last in the stacked row, so opening a row does not shove its title down. */
+    order: 5 !important;
+    margin: 12px 0 0 !important;
+  }
+  /* Hover cannot open a row on touch, so the +/- toggle takes over here. */
+  .p-landing [data-r='stoggle'] {
+    display: grid !important;
+    place-items: center !important;
+    cursor: pointer !important;
   }
   .p-landing [data-r='badges'] {
     padding: 56px 20px !important;
@@ -1495,6 +1507,7 @@ textarea::placeholder {
     white-space: normal !important;
     font-size: 16px !important;
     text-align: left !important;
+    max-width: none !important;
   }
   .p-about [data-r='tgrid'] {
     grid-template-columns: repeat(1, minmax(0, 1fr)) !important;

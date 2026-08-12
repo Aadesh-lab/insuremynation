@@ -126,7 +126,7 @@ export default function Contact() {
             style={{
               position: 'absolute',
               inset: 0,
-              background: 'url("/assets/contact-hero-support.webp") center / cover no-repeat',
+              background: 'url("/assets/contact-hero.webp") center / cover no-repeat',
               pointerEvents: 'none',
             }}
           />

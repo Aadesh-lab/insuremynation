@@ -6,9 +6,6 @@
     <link rel="icon" type="image/png" href="/assets/logo.webp" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <!-- Load the webfont CSS without blocking first paint: it arrives from a
-         third party, and `display=swap` means the page is readable in the
-         fallback face until it lands. -->
     <link
       rel="preload"
       as="style"
@@ -21,16 +18,12 @@
         rel="stylesheet"
       />
     </noscript>
-    <!-- Landing hero art is a CSS background inside the bundle, so it is only
-         discovered after React has rendered. Start it with the document
-         instead — but only on the route that shows it, so a deep link to a
-         product page doesn't pay for an image it will never paint. -->
     <script>
       if (location.pathname === '/') {
         var l = document.createElement('link');
         l.rel = 'preload';
         l.as = 'image';
-        l.href = '/assets/hero-landing-couple.webp';
+        l.href = '/assets/landing-hero.webp';
         l.fetchPriority = 'high';
         document.head.appendChild(l);
       }

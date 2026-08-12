@@ -29,11 +29,11 @@ const outDir = path.join(root, 'public', 'assets');
 // baked in, but where only the raw source survived we re-apply the treatment
 // here so the page matches the rest of the site.
 const rootImages = {
-  'young-happy-couple-making-agreement-with-msjbwo1w-we1a.png': { slug: 'hero-landing-couple' },
-  'young-happy-parents-enjoying-coloring-wi-msjcakqy-j5k5.png': { slug: 'claim-hero-parents' },
-  'team-business-people-stacking-hands-1-msjbz9o3-tjbj.png': { slug: 'about-hero-team' },
+  'young-happy-couple-making-agreement-with-msjbwo1w-we1a.png': { slug: 'landing-hero' },
+  'young-happy-parents-enjoying-coloring-wi-msjcakqy-j5k5.png': { slug: 'claim-hero' },
+  'team-business-people-stacking-hands-1-msjbz9o3-tjbj.png': { slug: 'about-hero' },
   'contact-us-customer-support-hotline-people-connect-call-customer-support.jpg': {
-    slug: 'contact-hero-support',
+    slug: 'contact-hero',
     duotone: true,
   },
 };

@@ -7,11 +7,11 @@ import { ArrowLeft, ArrowRight, BracketLeft, BracketRight } from '../components/
 import { BLUE } from '../data/site';
 
 const PHOTOS = [
-  '/assets/hero-health.webp',
-  '/assets/hero-travel.webp',
-  '/assets/hero-car.webp',
-  '/assets/hero-bike.webp',
-  '/assets/hero-life.webp',
+  '/assets/landing-slide-health.webp',
+  '/assets/landing-slide-travel.webp',
+  '/assets/landing-slide-car.webp',
+  '/assets/landing-slide-bike.webp',
+  '/assets/landing-slide-life.webp',
 ];
 
 const HEADLINES = [
@@ -44,7 +44,7 @@ const SERVICES = [
     title: 'Car Insurance',
     tagline: 'Drive covered, drive assured',
     to: '/car-insurance',
-    image: '/assets/svc-car-centered.webp',
+    image: '/assets/svc-car.webp',
     desc: "From third-party to comprehensive add-ons, we compare live quotes across insurers so you're not overpaying for cover you don't need. Quick, guided claims support when accidents happen.",
   },
   {
@@ -60,7 +60,7 @@ const SERVICES = [
     title: 'Travel Insurance',
     tagline: 'Explore without worry',
     to: '/travel-insurance',
-    image: '/assets/svc-travel-centered.webp',
+    image: '/assets/svc-travel.webp',
     desc: 'Trip cancellations, medical emergencies abroad, lost baggage - covered before you board. We match your itinerary to a plan that actually protects it.',
   },
   {
@@ -180,6 +180,9 @@ export default function Landing() {
   const snapTimer = useRef(null);
 
   const [hovered, setHovered] = useState(-1);
+  // Touch devices have no hover, so the service rows expand from an explicit
+  // +/- toggle instead. The toggle is display:none above the 760px breakpoint.
+  const [openRow, setOpenRow] = useState(-1);
 
   const startHeroTimer = () => {
     clearInterval(heroTimer.current);
@@ -292,7 +295,7 @@ export default function Landing() {
             top: -4,
             width: 1920,
             height: 1280,
-            background: 'url("/assets/hero-landing-couple.webp") center / cover no-repeat',
+            background: 'url("/assets/landing-hero.webp") center / cover no-repeat',
           }}
         />
         <div
@@ -490,7 +493,15 @@ export default function Landing() {
           }}
         >
           {SERVICES.map((row, i) => {
-            const on = hovered === i;
+            const on = hovered === i || openRow === i;
+            const toggleRow = (e) => {
+              // Keep the tap on the toggle from following the row's link, and
+              // drop the hover a touch tap leaves latched on this row.
+              e.preventDefault();
+              e.stopPropagation();
+              setHovered(-1);
+              setOpenRow(openRow === i ? -1 : i);
+            };
             const tone = on ? '#fff' : '#004AAD';
             return (
               <Link
@@ -531,6 +542,32 @@ export default function Landing() {
                   }}
                 >
                   {row.num}
+                </span>
+                <span
+                  data-r="stoggle"
+                  role="button"
+                  tabIndex={0}
+                  aria-expanded={openRow === i}
+                  aria-label={`${openRow === i ? 'Hide' : 'Show'} ${row.title} details`}
+                  onClick={toggleRow}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') toggleRow(e);
+                  }}
+                  style={{
+                    display: 'none',
+                    position: 'absolute',
+                    top: 10,
+                    right: 10,
+                    width: 40,
+                    height: 40,
+                    fontFamily: 'Poppins,sans-serif',
+                    fontSize: 30,
+                    fontWeight: 400,
+                    lineHeight: 1,
+                    color: tone,
+                  }}
+                >
+                  {openRow === i ? '−' : '+'}
                 </span>
                 {on && (
                   <div

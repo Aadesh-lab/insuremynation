@@ -26,7 +26,7 @@ export const PRODUCTS = {
     navVariant: 'blue',
     eyebrow: '[ health insurance ]',
     hero: {
-      image: '/assets/health-hero-blue-2.webp',
+      image: '/assets/health-hero.webp',
       position: 'center',
       scrim: null,
       title: ['Health Cover', 'Built Around You'],
@@ -59,7 +59,7 @@ export const PRODUCTS = {
       },
     ],
     coverArt: {
-      image: '/assets/cover-health-blocks.webp',
+      image: '/assets/health-cover.webp',
       position: 'center center',
       width: 641,
       aspectRatio: '760/894',
@@ -95,7 +95,7 @@ export const PRODUCTS = {
     navVariant: 'white',
     eyebrow: '[ life insurance ]',
     hero: {
-      image: '/assets/life-hero-family.webp',
+      image: '/assets/life-hero.webp',
       position: 'center 35%',
       scrim: SCRIM,
       title: ['Life Cover', 'For Your Dependents'],
@@ -128,7 +128,7 @@ export const PRODUCTS = {
       },
     ],
     coverArt: {
-      image: '/assets/life-cover-papercut.webp',
+      image: '/assets/life-cover.webp',
       position: 'center center',
       width: 600,
       aspectRatio: '4/5',
@@ -164,7 +164,7 @@ export const PRODUCTS = {
     navVariant: 'white',
     eyebrow: '[ car insurance ]',
     hero: {
-      image: '/assets/car-hero-bmw.webp',
+      image: '/assets/car-hero.webp',
       position: 'center 60%',
       scrim: SCRIM,
       title: ['Cover For Cars', 'Worth Protecting'],
@@ -197,7 +197,7 @@ export const PRODUCTS = {
       },
     ],
     coverArt: {
-      image: '/assets/car-cover-thar.webp',
+      image: '/assets/car-cover.webp',
       position: 'center center',
       width: 600,
       aspectRatio: '4/5',
@@ -233,7 +233,7 @@ export const PRODUCTS = {
     navVariant: 'white',
     eyebrow: '[ bike insurance ]',
     hero: {
-      image: '/assets/bike-hero-ktm.webp',
+      image: '/assets/bike-hero.webp',
       position: 'center',
       scrim: SCRIM,
       title: ['Superbike Cover', 'Built For The Machine'],
@@ -266,7 +266,7 @@ export const PRODUCTS = {
       },
     ],
     coverArt: {
-      image: '/assets/bike-cover-aprilia.webp',
+      image: '/assets/bike-cover.webp',
       position: '27% center',
       width: 600,
       aspectRatio: '3/2',
@@ -302,7 +302,7 @@ export const PRODUCTS = {
     navVariant: 'white',
     eyebrow: '[ travel insurance ]',
     hero: {
-      image: '/assets/hero-travel-docs.webp',
+      image: '/assets/travel-hero.webp',
       position: 'center',
       scrim: SCRIM,
       title: ['Travel Cover', 'For Every Trip'],
@@ -335,7 +335,7 @@ export const PRODUCTS = {
       },
     ],
     coverArt: {
-      image: '/assets/cover-travel-couple.webp',
+      image: '/assets/travel-cover.webp',
       position: 'center center',
       width: 600,
       aspectRatio: '3/4',
@@ -371,7 +371,7 @@ export const PRODUCTS = {
     navVariant: 'blue',
     eyebrow: '[ marine insurance ]',
     hero: {
-      image: '/assets/marine-hero-ship.webp',
+      image: '/assets/marine-hero.webp',
       position: 'center',
       scrim: null,
       title: ['Marine Cargo', 'And Hull Cover'],
@@ -404,7 +404,7 @@ export const PRODUCTS = {
       },
     ],
     coverArt: {
-      image: '/assets/marine-cover-forklift.webp',
+      image: '/assets/marine-cover.webp',
       position: 'center center',
       width: 597,
       aspectRatio: null,

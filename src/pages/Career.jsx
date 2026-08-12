@@ -121,7 +121,7 @@ export default function Career() {
             style={{
               position: 'absolute',
               inset: 0,
-              background: "url('/assets/career-hero-agent.webp') center / cover no-repeat",
+              background: "url('/assets/career-hero.webp') center / cover no-repeat",
             }}
           />
           <div
