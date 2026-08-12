@@ -44,6 +44,7 @@ export default function Partners({ padding = '104px 0', animate = false }) {
       }}
     >
       <span
+        data-r="peyebrow"
         style={{
           fontFamily: 'Poppins,sans-serif',
           fontWeight: 500,

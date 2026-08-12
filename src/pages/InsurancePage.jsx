@@ -302,7 +302,7 @@ export default function InsurancePage({ product }) {
           >
             <Reveal style={{ display: 'flex', flexDirection: 'column', gap: 22 }}>
               <SplitHeading data-r="chead" lines={cover.heading} fontSize={52} />
-              <Body>{cover.intro}</Body>
+              <Body data-r="cintro">{cover.intro}</Body>
             </Reveal>
             <Stagger
               data-r="cgrid"
@@ -399,7 +399,7 @@ export default function InsurancePage({ product }) {
             }}
           >
             <SplitHeading data-r="qhead" lines={['Tell Us', 'What You Need']} fontSize={52} />
-            <Body>
+            <Body data-r="qcopy">
               Share a few details and a certified counsellor will come back with quotes from our
               partner insurers - compared side by side, with the trade-offs explained in plain
               language.
@@ -416,6 +416,7 @@ export default function InsurancePage({ product }) {
                 <PhoneIcon stroke={BLUE} />
                 <a
                   href={PHONE_HREF}
+                  data-r="qcontact"
                   style={{
                     fontFamily: 'Poppins,sans-serif',
                     fontWeight: 500,
@@ -430,6 +431,7 @@ export default function InsurancePage({ product }) {
                 <MailIcon fill={BLUE} width={19} />
                 <a
                   href={EMAIL_HREF}
+                  data-r="qcontact"
                   style={{
                     fontFamily: 'Poppins,sans-serif',
                     fontWeight: 500,

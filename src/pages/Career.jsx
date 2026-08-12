@@ -282,6 +282,7 @@ export default function Career() {
               >
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                   <span
+                    data-r="rcmeta"
                     style={{
                       fontFamily: 'Poppins,sans-serif',
                       fontWeight: 500,
@@ -312,6 +313,7 @@ export default function Career() {
                   {r.duties.map((d) => (
                     <span
                       key={d}
+                      data-r="rcmeta"
                       style={{
                         fontFamily: 'Poppins,sans-serif',
                         fontWeight: 300,
@@ -334,11 +336,11 @@ export default function Career() {
                 >
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                     <span style={metaLabel}>Qualification</span>
-                    <span style={metaValue}>Senior secondary, graduate or fresher</span>
+                    <span data-r="rcmeta" style={metaValue}>Senior secondary, graduate or fresher</span>
                   </div>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                     <span style={metaLabel}>Location</span>
-                    <span style={metaValue}>Connaught Place, New Delhi</span>
+                    <span data-r="rcmeta" style={metaValue}>Connaught Place, New Delhi</span>
                   </div>
                   <div
                     style={{
@@ -349,7 +351,7 @@ export default function Career() {
                     }}
                   >
                     <span style={metaLabel}>Benefits</span>
-                    <span style={metaValue}>
+                    <span data-r="rcmeta" style={metaValue}>
                       Attractive remuneration, incentives, monthly rewards and recognition
                     </span>
                   </div>
@@ -372,6 +374,7 @@ export default function Career() {
                   }}
                 >
                   <span
+                    data-r="rcmeta"
                     style={{
                       fontFamily: 'Poppins,sans-serif',
                       fontWeight: 500,
@@ -427,7 +430,7 @@ export default function Career() {
             }}
           >
             <SplitHeading data-r="qhead" lines={['Send Us', 'Your Application']} fontSize={52} />
-            <Body>
+            <Body data-r="qcopy">
               Pick the role you are applying for, tell us a little about yourself and attach your
               CV. Every application is read by a person, and we reply either way.
             </Body>
@@ -436,6 +439,7 @@ export default function Career() {
                 <MailIcon fill={BLUE} width={19} />
                 <a
                   href={EMAIL_HREF}
+                  data-r="qcontact"
                   style={{
                     fontFamily: 'Poppins,sans-serif',
                     fontWeight: 500,
@@ -450,6 +454,7 @@ export default function Career() {
                 <PhoneIcon stroke={BLUE} />
                 <a
                   href={PHONE_HREF}
+                  data-r="qcontact"
                   style={{
                     fontFamily: 'Poppins,sans-serif',
                     fontWeight: 500,
@@ -504,7 +509,8 @@ export default function Career() {
                       }}
                     >
                       <span
-                        style={{
+                        data-r="chip"
+style={{
                           fontFamily: 'Poppins,sans-serif',
                           fontWeight: 500,
                           fontSize: 17,

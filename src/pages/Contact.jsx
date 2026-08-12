@@ -90,7 +90,6 @@ export default function Contact() {
         overflow: 'hidden',
       }}
     >
-      {/* ---------------------------------------------------------------- HERO */}
       <div
         data-r="hero"
         style={{
@@ -113,8 +112,6 @@ export default function Contact() {
             isolation: 'isolate',
           }}
         >
-          {/* Brand gradient sits *under* the photo here, so it carries the hero
-              while the image loads and tints anything the photo doesn't cover. */}
           <div
             style={{
               position: 'absolute',
@@ -368,7 +365,7 @@ export default function Contact() {
             }}
           >
             <SplitHeading data-r="qhead" lines={['Visit The', 'Office']} fontSize={52} />
-            <Body>
+            <Body data-r="qcopy">
               1015-1016, Ambadeep Building, 14 Kasturba Gandhi Marg, Connaught Place, New Delhi
               110001. Nearest metro: Barakhamba Road.
             </Body>
@@ -387,6 +384,7 @@ export default function Contact() {
                   }}
                 >
                   <span
+                    data-r="qmeta"
                     style={{
                       fontFamily: 'Poppins,sans-serif',
                       fontWeight: 500,
@@ -397,6 +395,7 @@ export default function Contact() {
                     {h.day}
                   </span>
                   <span
+                    data-r="qmeta"
                     style={{
                       fontFamily: 'Poppins,sans-serif',
                       fontWeight: 300,
@@ -411,6 +410,7 @@ export default function Contact() {
             </div>
             <a
               href={MAP_HREF}
+              data-r="qmeta"
               className="dc-cta-call"
               target="_blank"
               rel="noreferrer"
@@ -487,7 +487,8 @@ export default function Contact() {
                       }}
                     >
                       <span
-                        style={{
+                        data-r="chip"
+style={{
                           fontFamily: 'Poppins,sans-serif',
                           fontWeight: 500,
                           fontSize: 17,

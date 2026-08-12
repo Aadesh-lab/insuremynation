@@ -469,6 +469,7 @@ export default function Landing() {
         }}
       >
         <span
+          data-r="eyebrow"
           style={{
             fontFamily: 'Poppins,sans-serif',
             fontWeight: 500,

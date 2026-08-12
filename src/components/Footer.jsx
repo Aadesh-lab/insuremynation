@@ -77,7 +77,7 @@ export default function Footer() {
             data-r="flogo"
             decoding="async"
             loading="lazy"
-            src="/assets/logo-white-red.webp"
+            src="/assets/logo-footer.webp"
             alt="InsureNation"
             style={{ width: 286, height: 'auto', objectFit: 'contain' }}
           />

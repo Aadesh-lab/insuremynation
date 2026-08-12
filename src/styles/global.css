@@ -82,6 +82,23 @@ textarea::placeholder {
   filter: drop-shadow(0 1px 2px rgba(0, 13, 40, 0.18));
 }
 
+/* --------------------------------------------------------------------------
+   Hero copy
+
+   Every hero sets white type directly on photography, and the artwork behind
+   it changes as the slides rotate, so no single crop can be relied on. A tight
+   shadow for edge definition plus a wider, softer one for a halo keeps the
+   eyebrow, headline and standfirst legible over the pale frames without
+   looking like an effect. Inherited, so it reaches the whole block.
+   -------------------------------------------------------------------------- */
+.p-sub [data-r='htitleblock'],
+.p-about [data-r='atitleblock'],
+.p-landing [data-r='headline'] {
+  text-shadow:
+    0 1px 2px rgba(0, 13, 40, 0.38),
+    0 2px 16px rgba(0, 13, 40, 0.42);
+}
+
 /* Mobile bar controls — hidden until the header collapses at 760px. */
 [data-r='navburger'] {
   display: none;
@@ -328,6 +345,17 @@ textarea::placeholder {
     flex: 1 1 0 !important;
     min-width: 0 !important;
   }
+  /* Below the canvas the three columns are flex-sized rather than the drawn
+     402/442px, so the contact strings no longer fit on one line at the design's
+     21px — the email was running out through the side of its column at every
+     width from 1201 to 1600. Step the size down and let a long token break
+     inside the column rather than escape it. */
+  [data-r='fcol'] a,
+  [data-r='fcol'] span {
+    font-size: 18px !important;
+    line-height: 1.4 !important;
+    overflow-wrap: anywhere !important;
+  }
 }
 
 /* --------------------------------------------------------------------------
@@ -371,13 +399,6 @@ textarea::placeholder {
   }
   [data-r='footer'] {
     padding: 72px 32px 0 !important;
-  }
-  [data-r='fcol'] a,
-  [data-r='fcol'] span {
-    font-size: 18px !important;
-    line-height: 1.35 !important;
-    min-width: 0 !important;
-    overflow-wrap: anywhere !important;
   }
 }
 
@@ -497,7 +518,7 @@ textarea::placeholder {
     width: 210px !important;
   }
   [data-r='ftag'] {
-    font-size: 19px !important;
+    font-size: 14px !important;
   }
   [data-r='fcols'] {
     width: 100% !important;
@@ -509,12 +530,28 @@ textarea::placeholder {
   }
   [data-r='fcol'] a,
   [data-r='fcol'] span {
+    /* Part of the mobile type scale; the footer is one shared component, so
+       it steps down on every route rather than only the sub pages. */
+    font-size: 14px !important;
     min-width: 0 !important;
     overflow-wrap: anywhere !important;
   }
   [data-r='fmark'] {
-    font-size: 34px !important;
+    font-size: 27px !important;
     margin-top: 20px !important;
+  }
+
+  /* --------------------------------------------------------------------------
+     Mobile type scale
+
+     One step down for phones, applied across every page: 34/32 -> 27,
+     30/28 -> 21, 25/24 -> 18, 21 -> 16, 19/18/17 -> 14. Sizes the design sets
+     inline on a component need `!important` to be overridden at all. Rules for
+     page-specific elements live in the per-page blocks below.
+     ------------------------------------------------------------------------ */
+  [data-r='eyebrow'],
+  [data-r='peyebrow'] {
+    font-size: 18px !important;
   }
 }
 
@@ -721,6 +758,12 @@ textarea::placeholder {
     font-size: 27px !important;
     padding: 0 20px !important;
     box-sizing: border-box !important;
+    /* The headline is a span, and on an inline box side padding only applies
+       to the start of the first line and the end of the last — every wrapped
+       line ran flush to the screen edge. As a block it indents evenly, wraps
+       inside the padding, and balances instead of dropping a one-word line. */
+    display: block !important;
+    text-wrap: balance;
   }
   .p-landing [data-r='heroarrows'] {
     position: relative !important;
@@ -760,7 +803,7 @@ textarea::placeholder {
     align-items: flex-start !important;
   }
   .p-landing [data-r='stitle'] {
-    font-size: 32px !important;
+    font-size: 27px !important;
     text-align: left !important;
     white-space: normal !important;
   }
@@ -799,7 +842,7 @@ textarea::placeholder {
     padding: 30px 26px !important;
   }
   .p-landing [data-r='btitle'] {
-    font-size: 25px !important;
+    font-size: 18px !important;
   }
   .p-landing [data-r='bsub'] {
     font-size: 16px !important;
@@ -816,12 +859,12 @@ textarea::placeholder {
     height: auto !important;
   }
   .p-landing [data-r='theading'] {
-    font-size: 32px !important;
+    font-size: 27px !important;
   }
   .p-landing [data-r='tsub'] {
     width: auto !important;
     max-width: none !important;
-    font-size: 17px !important;
+    font-size: 14px !important;
   }
   .p-landing [data-r='trail'] {
     width: 100% !important;
@@ -830,27 +873,116 @@ textarea::placeholder {
   .p-landing [data-r='tcard'] {
     width: calc(100vw - 40px) !important;
     min-height: 0 !important;
-    padding: 24px !important;
+    /* Room at the foot for the pager, which sits inside the card here. */
+    padding: 24px 24px 88px !important;
     margin-right: 14px !important;
   }
   .p-landing [data-r='tname'] {
-    font-size: 21px !important;
+    font-size: 16px !important;
     white-space: normal !important;
   }
   .p-landing [data-r='tpolicy'] {
-    font-size: 17px !important;
+    font-size: 14px !important;
   }
   .p-landing [data-r='tquote'] {
     font-size: 16px !important;
   }
+  /* Pager sits in the card's bottom-right corner, as it does on desktop,
+     rather than floating on the white below it. `trail` is the positioning
+     context and matches the card's width here, so its corner is the card's. */
   .p-landing [data-r='tarrow'] {
-    position: relative !important;
-    left: 0 !important;
-    right: auto !important;
-    top: 0 !important;
+    position: absolute !important;
+    left: auto !important;
+    right: 20px !important;
+    top: auto !important;
+    bottom: 20px !important;
     width: 54px !important;
     height: 54px !important;
-    margin: 16px auto 0 !important;
+    margin: 0 !important;
+  }
+
+  /* --- mobile type scale (see the shared block) -------------------------- */
+  .p-landing [data-r='snum'] {
+    font-size: 16px !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Landing hero: fit the fold
+
+   The hero is 1117px tall on the design canvas and the rotating headline sits
+   near its foot, so on any laptop — 1080p leaves roughly 980px of viewport
+   once browser chrome is taken — the headline and the arrows that page it
+   started below the fold and had to be scrolled to. Bounding the hero by the
+   viewport and anchoring that row to its bottom keeps the whole composition on
+   screen; on a display tall enough for the full canvas it lands within a few
+   pixels of the original.
+
+   Declared last so it takes precedence over the canvas positions above, and
+   held to ≥1201px: the tablet rules already stack the headline above the
+   arrows, which is what those widths need.
+   -------------------------------------------------------------------------- */
+@media (min-width: 1201px) {
+  .p-landing [data-r='hero'] {
+    height: min(1117px, 100vh) !important;
+    height: min(1117px, 100svh) !important;
+    min-height: 860px !important;
+  }
+  .p-landing [data-r='gal'] {
+    top: 46% !important;
+    transform: translateY(-50%) !important;
+  }
+  .p-landing [data-r='headline'] {
+    top: auto !important;
+    bottom: 110px !important;
+    /* Keep the design's measure. Stretched edge to edge it ran underneath the
+       pager arrows, which sit in the same band on the right. */
+    right: auto !important;
+    max-width: 760px !important;
+  }
+  .p-landing [data-r='heroarrows'] {
+    top: auto !important;
+    bottom: 76px !important;
+  }
+}
+
+/* On a short window — a 1366x768 laptop leaves about 625px once chrome is
+   accounted for — the collage and the headline would meet. Scale the collage
+   instead of clipping it or pushing the headline down again; scaling the
+   absolutely-positioned container keeps every slot's proportion to the others
+   exactly as drawn. */
+@media (min-width: 1201px) and (max-height: 860px) {
+  .p-landing [data-r='hero'] {
+    min-height: 0 !important;
+  }
+  .p-landing [data-r='gal'] {
+    top: 44% !important;
+    transform: translateY(-50%) scale(0.78) !important;
+  }
+}
+
+@media (min-width: 1201px) and (max-height: 700px) {
+  .p-landing [data-r='gal'] {
+    transform: translateY(-50%) scale(0.58) !important;
+  }
+}
+
+/* Same idea for tablets in landscape, where the tablet rules stack the
+   headline above the arrows and the hero is 940px tall. */
+@media (min-width: 761px) and (max-width: 1200px) and (max-height: 860px) {
+  .p-landing [data-r='hero'] {
+    height: min(940px, 100vh) !important;
+    height: min(940px, 100svh) !important;
+  }
+  .p-landing [data-r='gal'] {
+    top: 32% !important;
+    transform: translateY(-50%) scale(0.85) !important;
+  }
+}
+
+@media (min-width: 761px) and (max-width: 1200px) and (max-height: 700px) {
+  .p-landing [data-r='gal'] {
+    transform: translateY(-50%) scale(0.72) !important;
   }
 }
 
@@ -1026,10 +1158,10 @@ textarea::placeholder {
     padding: 34px 20px 0 !important;
   }
   .p-sub [data-r='htitle'] {
-    font-size: 34px !important;
+    font-size: 27px !important;
   }
   .p-sub [data-r='hsub'] {
-    font-size: 17px !important;
+    font-size: 14px !important;
     width: auto !important;
   }
   .p-sub [data-r='why'],
@@ -1046,10 +1178,17 @@ textarea::placeholder {
     padding-top: 60px !important;
   }
   .p-sub [data-r='whead'] {
-    font-size: 32px !important;
+    font-size: 27px !important;
   }
   .p-sub [data-r='wcopy'] {
     font-size: 17px !important;
+  }
+  /* The paragraphs are `Body`, which writes its own inline font-size — that
+     beats anything inherited from the container, so the rule above never
+     reached the text. Target the paragraph itself; `!important` outranks the
+     inline value. */
+  .p-sub [data-r='wcopy'] span {
+    font-size: 14px !important;
   }
   .p-sub [data-r='perks'] {
     padding: 0 20px 60px !important;
@@ -1061,17 +1200,20 @@ textarea::placeholder {
     border-radius: 110px !important;
     padding: 32px 28px !important;
   }
+  .p-sub [data-r='psub'] {
+    font-size: 14px !important;
+  }
   .p-sub [data-r='cimg'] {
     max-height: 560px !important;
   }
   .p-sub [data-r='chead'] {
-    font-size: 30px !important;
+    font-size: 21px !important;
   }
   .p-sub [data-r='cgrid'] {
     grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
   }
   .p-sub [data-r='qhead'] {
-    font-size: 30px !important;
+    font-size: 21px !important;
   }
   .p-sub [data-r='qform'] {
     padding: 28px 22px !important;
@@ -1080,13 +1222,37 @@ textarea::placeholder {
     grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
   }
   .p-sub [data-r='ehead'] {
-    font-size: 28px !important;
+    font-size: 21px !important;
   }
   .p-sub [data-r='ecopy'] {
-    font-size: 17px !important;
+    font-size: 14px !important;
   }
   .p-sub [data-r='ephone'] {
     font-size: 28px !important;
+  }
+
+  /* --- mobile type scale -------------------------------------------------
+     Steps the page's type down one rung: 34/32 -> 27, 30/28 -> 21, 25/24 -> 18,
+     21 -> 16, 19/18/17 -> 14. Several of these read the size off a primitive's
+     inline style, so they need `!important` to take effect. */
+  .p-sub [data-r='ptitle'] {
+    font-size: 18px !important;
+  }
+  .p-sub [data-r='cintro'],
+  .p-sub [data-r='qcopy'],
+  .p-sub [data-r='qcontact'] {
+    font-size: 16px !important;
+  }
+  .p-sub [data-r='cgrid'] span,
+  .p-sub [data-r='submitlabel'],
+  .p-sub [data-r='ectas'] a,
+  .p-sub [data-r='rcmeta'],
+  .p-sub [data-r='chip'],
+  .p-sub [data-r='qmeta'] {
+    font-size: 14px !important;
+  }
+  .p-sub [data-r='rolehead'] {
+    font-size: 27px !important;
   }
 }
 
@@ -1253,10 +1419,10 @@ textarea::placeholder {
     padding: 34px 20px 0 !important;
   }
   .p-about [data-r='atitle'] {
-    font-size: 34px !important;
+    font-size: 27px !important;
   }
   .p-about [data-r='asub'] {
-    font-size: 17px !important;
+    font-size: 14px !important;
     width: auto !important;
   }
   .p-about [data-r='intro'],
@@ -1273,7 +1439,7 @@ textarea::placeholder {
     gap: 24px !important;
   }
   .p-about [data-r='ihead'] {
-    font-size: 32px !important;
+    font-size: 27px !important;
   }
   .p-about [data-r='icopy'] {
     font-size: 17px !important;
@@ -1334,7 +1500,28 @@ textarea::placeholder {
     grid-template-columns: repeat(1, minmax(0, 1fr)) !important;
   }
   .p-about [data-r='tmname'] {
-    font-size: 24px !important;
+    font-size: 18px !important;
+  }
+
+  /* --- mobile type scale (see the shared block) -------------------------- */
+  .p-about [data-r='rvname'] {
+    font-size: 21px !important;
+  }
+  /* 26px is not one of the sizes in the scale, but this is the same badge
+     component the landing page renders at 18px — matched so the two pages
+     agree. `vmhead`, also 26px, has no counterpart and is left alone. */
+  .p-about [data-r='btitle'] {
+    font-size: 18px !important;
+  }
+  .p-about [data-r='icopy'] span,
+  .p-about [data-r='snum'],
+  .p-about [data-r='rvmeta'],
+  .p-about [data-r='rev'] a {
+    font-size: 16px !important;
+  }
+  .p-about [data-r='tmmeta'],
+  .p-about [data-r='vmquote'] {
+    font-size: 14px !important;
   }
 }
 
@@ -1348,5 +1535,144 @@ textarea::placeholder {
     animation-duration: 0.001ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.001ms !important;
+  }
+}
+
+/* ==========================================================================
+   Mobile vertical rhythm
+
+   The sections keep the canvas's vertical spacing on phones — 104px of bottom
+   padding and 56px between a section's eyebrow and its content — which was
+   drawn for a 1728px-wide page and leaves large empty bands once the columns
+   stack and the type steps down. This evens every page out to 32px above and
+   below each section (64px between any two) with a 28px internal gap.
+
+   Declared last so it takes precedence over the per-page padding above.
+   ========================================================================== */
+@media (max-width: 760px) {
+  .p-landing [data-r='partners'],
+  .p-sub [data-r='partners'],
+  .p-about [data-r='partners'],
+  .p-landing [data-r='services'],
+  .p-landing [data-r='badges'],
+  .p-landing [data-r='tsec'],
+  .p-sub [data-r='why'],
+  .p-sub [data-r='perks'],
+  .p-sub [data-r='cover'],
+  .p-sub [data-r='quote'],
+  .p-sub [data-r='expert'],
+  .p-about [data-r='intro'],
+  .p-about [data-r='badges'],
+  .p-about [data-r='vm'],
+  .p-about [data-r='blocks'],
+  .p-about [data-r='team'],
+  .p-about [data-r='rev'] {
+    padding-top: 32px !important;
+    padding-bottom: 32px !important;
+  }
+
+  /* The expert panel carries its own inset, drawn at 72px top and bottom. */
+  .p-sub [data-r='expert'] > div {
+    padding-top: 32px !important;
+    padding-bottom: 32px !important;
+  }
+
+  .p-landing [data-r='services'],
+  .p-sub [data-r='why'],
+  .p-sub [data-r='cover'],
+  .p-sub [data-r='quote'],
+  .p-about [data-r='intro'],
+  .p-about [data-r='vm'],
+  .p-about [data-r='blocks'],
+  .p-about [data-r='team'],
+  .p-about [data-r='rev'] {
+    gap: 28px !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Mobile pills
+
+   The perk and trust pills are drawn as fixed-height stadiums — 200px and
+   190px — sized for four of them side by side on the canvas. Stacked one per
+   row, and with the type stepped down, they held about 60px of copy in 200px
+   of box. They now hug their content; `border-radius: 999px` keeps the shape a
+   true stadium whatever height the copy comes to, where the drawn 110px would
+   have started rounding into a lozenge.
+   -------------------------------------------------------------------------- */
+@media (max-width: 760px) {
+  .p-sub [data-r='perk'] {
+    min-height: 0 !important;
+    padding: 26px 36px !important;
+    border-radius: 999px !important;
+    gap: 8px !important;
+  }
+
+  .p-landing [data-r='badge'],
+  .p-about [data-r='badge'] {
+    min-height: 0 !important;
+    height: auto !important;
+    padding: 24px 34px !important;
+    border-radius: 999px !important;
+    gap: 8px !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Desktop and tablet pills
+
+   Same fixed heights as the mobile pills, and the same problem at the other
+   end: the About trust badges hold two short lines inside a 270px box — 190px
+   of it empty — because the height was drawn for the longest label in the set.
+   Letting the row size to its own content keeps the four equal (the row is
+   `align-items: stretch`) while the capsule closes in around the type. The
+   floor stops a single short label collapsing to a thin lozenge.
+   -------------------------------------------------------------------------- */
+@media (min-width: 761px) {
+  .p-about [data-r='badge'],
+  .p-landing [data-r='badge'],
+  .p-sub [data-r='perk'] {
+    height: auto !important;
+    min-height: 190px !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   Pill type, above mobile
+
+   The capsules are round but their padding is rectangular, so the corners of a
+   tall text block sit outside the curve: at 1280px the copy box is 185px wide
+   where the ellipse only allows 177px at the top and bottom lines, which is
+   why a three-line title reads as if it is bursting out of the circle. Two
+   changes: a deeper side inset, and type that scales with the badge instead of
+   holding 36px until the tablet breakpoint — fewer wrapped lines means a
+   shorter block, and a shorter block sits where the shape is at its widest.
+   The clamps reach their design values (36 / 21 / 30 / 19px) at the 1728px
+   canvas width and hold there.
+   -------------------------------------------------------------------------- */
+@media (min-width: 761px) {
+  .p-landing [data-r='badge'],
+  .p-about [data-r='badge'],
+  .p-sub [data-r='perk'] {
+    padding-left: 44px !important;
+    padding-right: 44px !important;
+  }
+
+  .p-landing [data-r='btitle'],
+  .p-about [data-r='btitle'] {
+    font-size: clamp(20px, 2.1vw, 36px) !important;
+  }
+
+  .p-landing [data-r='bsub'],
+  .p-about [data-r='bsub'] {
+    font-size: clamp(14px, 1.2vw, 21px) !important;
+  }
+
+  .p-sub [data-r='ptitle'] {
+    font-size: clamp(19px, 1.8vw, 30px) !important;
+  }
+
+  .p-sub [data-r='psub'] {
+    font-size: clamp(14px, 1.15vw, 19px) !important;
   }
 }

@@ -30,25 +30,25 @@ const TEAM = [
   {
     name: 'Nehal Kumar',
     role: 'Co-Founder & Chief Executive',
-    file: 'nehal.jpg',
+    file: 'nehal.webp',
     bio: 'MBA from IMT Ghaziabad and 19+ years as a retail financial professional. A founder member of Niva Bupa (formerly Max Bupa Health Insurance), he has also worked with HDFC Bank, Nippon AMC and Kotak Mahindra Bank. He was instrumental in building a profitable HNI-focused direct sales distribution with customer service at its core. An avid photographer who keeps a learning attitude towards life.',
   },
   {
     name: 'Parvesh Kumar',
     role: 'Co-Founder & Chief Business Officer',
-    file: 'parvesh-kumar.jpg',
+    file: 'parvesh-kumar.webp',
     bio: '15+ years of leadership in health and life insurance. As a founder member of direct sales distribution at Niva Bupa, he delivered profitable growth through large team management, P&L ownership and HNI relationship management. Previously with Aviva and MetLife. B.Com from Delhi University and a passionate cricketer.',
   },
   {
     name: 'Deepak Kr Sharma',
     role: 'Business Head - Health Insurance',
-    file: 'deepak.jpg',
+    file: 'deepak.webp',
     bio: '7+ years in insurance - life cover at HDFC Life, then health insurance expertise at Niva Bupa, where he played a big role in the success of direct sales. He believes recommending solutions based on a person’s actual needs is the key to relationship management. B.Com from Delhi University.',
   },
   {
     name: 'Anubhav Adya',
     role: 'Business Head - Direct Sales',
-    file: 'anubhav.jpg',
+    file: 'anubhav.webp',
     bio: '6+ years in health insurance. A founder member of the Any Time Health initiative at CyberHub for Niva Bupa - an industry-first digital sales and service machine - and helped build point-of-care touchpoints in hospitals. His expertise is HNI relationship management. Graduate of IP University and a massive cricket buff.',
   },
 ];
@@ -155,9 +155,14 @@ export default function About() {
           <motion.div variants={staggerItem}>
             <Eyebrow color="#fff">[ about us ]</Eyebrow>
           </motion.div>
-          <motion.div variants={staggerItem}>
-            <SplitHeading data-r="atitle" lines={['A Boutique', 'Insurance Firm']} color="#fff" />
-          </motion.div>
+         <motion.div variants={staggerItem}>
+  <SplitHeading
+    data-r="atitle"
+    lines={['A Boutique', 'Insurance Firm']}
+    color="#fff"
+    className="drop-shadow-[0_2px_6px_rgba(0,0,0,0.5)]"
+  />
+</motion.div>
           <motion.span
             data-r="asub"
             variants={staggerItem}
@@ -271,7 +276,7 @@ export default function About() {
               data-r="bsub"
               style={{
                 fontFamily: 'Poppins,sans-serif',
-                fontSize: 21,
+                fontSize: 14,
                 textAlign: 'center',
                 lineHeight: 1.2,
                 color: BLUE,
@@ -531,25 +536,27 @@ export default function About() {
                     width: '100%',
                     aspectRatio: '1/1',
                     overflow: 'hidden',
+                    // Shows through while the portrait decodes, and behind the
+                    // ones shot against a pale background.
                     background:
                       'repeating-linear-gradient(135deg, rgba(0,74,173,0.10) 0 10px, rgba(0,74,173,0.04) 10px 20px)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
                   }}
                 >
-                  <span
+                  <img
+                    src={`/assets/${m.file}`}
+                    alt={m.name}
+                    loading="lazy"
+                    decoding="async"
                     style={{
-                      fontFamily: 'ui-monospace,SFMono-Regular,Menlo,monospace',
-                      fontSize: 13,
-                      letterSpacing: '0.04em',
-                      color: 'rgba(0,74,173,0.75)',
-                      textAlign: 'center',
-                      padding: '0 12px',
+                      width: '100%',
+                      height: '100%',
+                      // Portraits are framed head-and-shoulders, so bias the
+                      // crop upward rather than centring on the chest.
+                      objectFit: 'cover',
+                      objectPosition: 'center top',
+                      display: 'block',
                     }}
-                  >
-                    {m.file}
-                  </span>
+                  />
                 </div>
                 <div
                   style={{
@@ -573,6 +580,7 @@ export default function About() {
                     {m.name}
                   </span>
                   <span
+                    data-r="tmmeta"
                     style={{
                       fontFamily: 'Poppins,sans-serif',
                       fontWeight: 300,
@@ -586,6 +594,7 @@ export default function About() {
                 </div>
                 {bioOpen && (
                   <span
+                    data-r="tmmeta"
                     style={{
                       fontFamily: 'Poppins,sans-serif',
                       fontWeight: 300,
@@ -599,6 +608,7 @@ export default function About() {
                   </span>
                 )}
                 <span
+                  data-r="tmmeta"
                   onClick={() => setOpenBio(bioOpen ? -1 : i)}
                   role="button"
                   tabIndex={0}
@@ -675,6 +685,7 @@ export default function About() {
                 }}
               >
                 <span
+                  data-r="rvname"
                   style={{
                     fontFamily: 'Poppins,sans-serif',
                     fontWeight: 700,
@@ -687,6 +698,7 @@ export default function About() {
                   {t.name}
                 </span>
                 <span
+                  data-r="rvmeta"
                   style={{
                     fontFamily: 'Poppins,sans-serif',
                     fontWeight: 300,
@@ -699,6 +711,7 @@ export default function About() {
                 </span>
               </div>
               <span
+                data-r="rvmeta"
                 style={{
                   fontFamily: 'Poppins,sans-serif',
                   fontWeight: 300,

@@ -349,7 +349,7 @@ export default function ClaimSupport() {
             }}
           >
             <SplitHeading data-r="qhead" lines={['Raise Your', 'Case With Us']} fontSize={52} />
-            <Body>
+            <Body data-r="qcopy">
               Tell us what happened in a few lines. Keep the policy number and any letters from the
               insurer handy - a counsellor will call to collect the documents and set out the next
               steps.
@@ -359,6 +359,7 @@ export default function ClaimSupport() {
                 <PhoneIcon stroke={BLUE} />
                 <a
                   href={PHONE_HREF}
+                  data-r="qcontact"
                   style={{
                     fontFamily: 'Poppins,sans-serif',
                     fontWeight: 500,
@@ -373,6 +374,7 @@ export default function ClaimSupport() {
                 <MailIcon fill={BLUE} width={19} />
                 <a
                   href={EMAIL_HREF}
+                  data-r="qcontact"
                   style={{
                     fontFamily: 'Poppins,sans-serif',
                     fontWeight: 500,

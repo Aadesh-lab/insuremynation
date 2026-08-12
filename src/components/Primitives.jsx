@@ -4,6 +4,7 @@ import { BLUE } from '../data/site';
 export function Eyebrow({ children, color = BLUE, ...rest }) {
   return (
     <span
+      data-r="eyebrow"
       {...rest}
       style={{
         fontFamily: 'Poppins,sans-serif',
@@ -159,6 +160,7 @@ export function SubmitRow({ label, note, sent, onClick }) {
         }}
       >
         <span
+          data-r="submitlabel"
           style={{
             fontFamily: 'Poppins,sans-serif',
             fontWeight: 500,
