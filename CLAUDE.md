@@ -13,8 +13,9 @@ Two directories, **one** deployable.
 
 This file is the **only** `CLAUDE.md` in the repo, and `README.md`, `.gitignore` and
 `.gitattributes` are likewise single and at the root. Do not re-add per-directory copies.
-Note that GitHub tracks `frontend/CLAUDE.md` and `frontend/README.md`, so a pull will try
-to restore them — delete them again and fold anything new into this file.
+`frontend/` used to carry its own `CLAUDE.md` and `README.md`; both were removed and that
+removal is pushed, so a pull will not bring them back. If upstream ever re-adds one, fold
+its content in here and delete it again rather than keeping two.
 
 The `Dockerfile` and `railway.toml` are at the **repo root**, not in `backend/`, because
 the build needs both directories: it builds the site with npm, embeds the output into the
@@ -26,10 +27,12 @@ Deployed at https://insuremynation-production.up.railway.app.
 Because the site and the API share an origin, the chat widget's `baseUrl` is just
 `window.location.origin` — no CORS, and no build-time URL to keep in sync.
 
-Only `frontend/` is on GitHub; `backend/` and the deploy files are untracked so far. When
-pulling, expect upstream to own everything under `frontend/` — the only local frontend
-changes are the chatbot additions in `frontend/index.html` and the `/v1` dev proxy in
-`frontend/vite.config.js`, both pure additions.
+Everything here is on GitHub, `backend/` and the deploy files included. Upstream authors
+the site itself, so when pulling expect it to own `frontend/src/pages`,
+`frontend/src/data`, `frontend/src/styles` and `frontend/public`. The chat is ours and
+lives in `frontend/src/components/chat/`; `frontend/index.html` is byte-identical to
+upstream, and the only other local frontend edits are the `<ChatWidget/>` mount in
+`App.jsx` and the `/v1` dev proxy in `vite.config.js`.
 
 ## Commands
 

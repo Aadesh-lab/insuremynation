@@ -2,16 +2,29 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { BLUE, DEEP, EMAIL, PHONE } from '../../data/site';
 import Message from './Message';
 
-/** Opening prompts, phrased as a visitor would ask them. */
+/**
+ * Opening prompts. `label` is what the visitor taps; `message` is what gets sent.
+ *
+ * The two are separate on purpose. A bare "Health" is a poor retrieval query — the
+ * same short-vague-question problem that made "what are you" fail before identity
+ * moved into the system prompt — and it reads oddly in the transcript. The full
+ * question retrieves the right section and leaves a log someone can follow.
+ *
+ * These lead with the six product lines rather than with claims and logistics,
+ * because the first thing worth learning from a new visitor is which cover they are
+ * shopping for. Every one lands on a well-stocked section of the corpus.
+ */
 const SUGGESTIONS = [
-  'What does health cover include?',
-  'How do I make a claim?',
-  'Get a quote',
-  'Where are you based?',
-  'Talk to a human',
+  { label: 'Health', message: 'What does your health insurance cover?' },
+  { label: 'Life', message: 'What does your life insurance cover?' },
+  { label: 'Car', message: 'What does your car insurance cover?' },
+  { label: 'Bike', message: 'What does your bike insurance cover?' },
+  { label: 'Travel', message: 'What does your travel insurance cover?' },
+  { label: 'Marine', message: 'What does your marine insurance cover?' },
+  { label: 'Something else', message: 'What else can you help me with?' },
 ];
 
-const GREETING = 'Hi! How can I help you today?';
+const GREETING = 'Hi! Which cover are you looking for?';
 
 export default function ChatPanel({ chat, onClose }) {
   const { messages, pending, error, send, clearError, reset } = chat;
@@ -105,11 +118,14 @@ export default function ChatPanel({ chat, onClose }) {
         >
           {SUGGESTIONS.map((s) => (
             <button
-              key={s}
+              key={s.label}
               type="button"
               className="imn-chat-chip"
               disabled={pending}
-              onClick={() => submit(s)}
+              onClick={() => submit(s.message)}
+              // Without this a screen reader announces only "Health", which says
+              // nothing about what tapping it does.
+              aria-label={s.message}
               style={{
                 appearance: 'none',
                 background: '#fff',
@@ -125,7 +141,7 @@ export default function ChatPanel({ chat, onClose }) {
                 textAlign: 'left',
               }}
             >
-              {s}
+              {s.label}
             </button>
           ))}
         </div>

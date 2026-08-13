@@ -13,9 +13,8 @@ Dockerfile  builds both, at the repo root because it needs both directories
 ```
 
 This is the only `README.md` in the repo; `CLAUDE.md`, `.gitignore` and `.gitattributes`
-are likewise single and at the root. GitHub tracks `frontend/README.md` and
-`frontend/CLAUDE.md`, so a pull will try to restore them — delete them again and fold
-anything new into these files.
+are likewise single and at the root. `frontend/` used to carry its own copies of the first
+two; both were removed and that removal is pushed, so a pull will not bring them back.
 
 ## Running locally
 
@@ -154,12 +153,15 @@ For day-to-day frontend work use `npm run dev` instead: Vite proxies `/v1` to
 `localhost:8080` (see `frontend/vite.config.js`), so run the Go binary alongside it
 and the widget works same-origin without rebuilding.
 
-The only client is the imagine.bo chat widget, which the site loads from
-`https://public.assets.imagine.bo/imagine.bo-chat-widget.js`. The widget is
-configured with `baseUrl` pointing here and **no `apiKey`**, so it sends no
-`Authorization` header — this service adds one. Because the widget derives every
-URL from `baseUrl`, the routes below mirror the upstream's own paths rather than
-being an API of our own design.
+The only client is the site's own chat UI, in
+`frontend/src/components/chat/`. It calls this service on the page's own origin and
+sends no credentials of its own — the API key is added here, server-side.
+
+The `/v1` route shapes below mirror the upstream RAG API's paths. That started as a
+constraint (an earlier version used imagine.bo's hosted widget script, which built
+every URL from a configured `baseUrl` and so could not be pointed at paths of our
+own naming) and has been kept since: it keeps this service a thin, recognisable
+shim over the upstream rather than a second API to learn.
 
 | route | purpose |
 | --- | --- |
