@@ -22,6 +22,24 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 const SESSION_KEY = 'imn-chat-session-id';
 
+/**
+ * sessionStorage, not localStorage, and the distinction is a privacy one.
+ *
+ * People ask this assistant about health conditions, claim disputes and money. With
+ * localStorage the transcript came back on a hard refresh, a browser restart, and —
+ * the case that actually matters — for the next person to use a shared computer. The
+ * backend scopes session reads by client IP, which stops another network reading a
+ * conversation but is no help at all on one shared machine.
+ *
+ * Per-tab is the balance: refreshing mid-conversation does not throw the thread away,
+ * closing the tab does.
+ *
+ * Note what this does NOT change: the upstream still writes each turn to its own
+ * message table for as long as the session lives. Stopping that means not sending a
+ * session_id at all, since its SavePair only runs when one is present.
+ */
+const store = () => (typeof window === 'undefined' ? null : window.sessionStorage);
+
 /** Matches the cap the backend applies to history, so we send what it will keep. */
 const MAX_HISTORY = 10;
 
@@ -40,7 +58,7 @@ async function errorMessage(res) {
 
 function loadSessionId() {
   try {
-    return window.localStorage.getItem(SESSION_KEY) || null;
+    return store()?.getItem(SESSION_KEY) || null;
   } catch {
     // Private mode / storage disabled. A session is optional, so carry on without.
     return null;
@@ -49,8 +67,8 @@ function loadSessionId() {
 
 function saveSessionId(id) {
   try {
-    if (id) window.localStorage.setItem(SESSION_KEY, id);
-    else window.localStorage.removeItem(SESSION_KEY);
+    if (id) store()?.setItem(SESSION_KEY, id);
+    else store()?.removeItem(SESSION_KEY);
   } catch {
     /* ignore */
   }
@@ -259,14 +277,24 @@ export function useChat() {
     [messages, pending]
   );
 
-  const reset = useCallback(() => {
+  /**
+   * Discards the conversation and starts a new one.
+   *
+   * Re-inits rather than only clearing, so the panel is immediately usable instead of
+   * waiting for a close-and-reopen to mint a session. Any in-flight answer is aborted
+   * first — a visitor clearing the thread does not want the previous reply landing in
+   * the new one.
+   */
+  const reset = useCallback(async () => {
     abortRef.current?.abort();
     setMessages([]);
     setError(null);
+    setPending(false);
     sessionRef.current = null;
     saveSessionId(null);
     restoredRef.current = false;
-  }, []);
+    await init();
+  }, [init]);
 
   return { messages, pending, error, send, init, reset, clearError: () => setError(null) };
 }

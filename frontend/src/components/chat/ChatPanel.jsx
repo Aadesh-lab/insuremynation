@@ -14,7 +14,7 @@ const SUGGESTIONS = [
 const GREETING = 'Hi! How can I help you today?';
 
 export default function ChatPanel({ chat, onClose }) {
-  const { messages, pending, error, send, clearError } = chat;
+  const { messages, pending, error, send, clearError, reset } = chat;
   const [draft, setDraft] = useState('');
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
@@ -61,7 +61,12 @@ export default function ChatPanel({ chat, onClose }) {
         fontFamily: 'Poppins,sans-serif',
       }}
     >
-      <Header onClose={onClose} />
+      <Header
+        onClose={onClose}
+        // Only offered once there is something to clear, so it does not sit there
+        // inviting a visitor to reset an empty conversation.
+        onReset={messages.length > 0 ? reset : null}
+      />
 
       <div
         ref={scrollRef}
@@ -137,7 +142,7 @@ export default function ChatPanel({ chat, onClose }) {
   );
 }
 
-function Header({ onClose }) {
+function Header({ onClose, onReset }) {
   return (
     <div
       style={{
@@ -181,6 +186,39 @@ function Header({ onClose }) {
           Answers from our website
         </div>
       </div>
+
+      {onReset && (
+        <button
+          type="button"
+          className="imn-chat-iconbtn"
+          onClick={onReset}
+          aria-label="Start a new chat, clearing this conversation"
+          title="New chat"
+          style={{
+            appearance: 'none',
+            border: 0,
+            background: 'none',
+            borderRadius: 8,
+            width: 34,
+            height: 34,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            flexShrink: 0,
+          }}
+        >
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <path
+              d="M3 12a9 9 0 0 1 15.5-6.2M21 12a9 9 0 0 1-15.5 6.2M18 3v4h-4M6 21v-4h4"
+              stroke="#fff"
+              strokeWidth="1.8"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </button>
+      )}
 
       <button
         type="button"
