@@ -1,0 +1,10 @@
+# Keep the build context small and the layer cache useful.
+**/node_modules
+**/bin
+frontend/dist
+backend/internal/dist
+_source
+.git
+.vite
+**/.env
+**/.env.local

@@ -1,0 +1,20 @@
+<!doctype html>
+<!--
+  Placeholder so `//go:embed all:dist` in ../fs.go compiles from a clean checkout.
+  The Docker build replaces this whole directory with the real Vite output
+  (`npm run build` in frontend/), so this file is only ever served if someone
+  builds the binary without building the site first.
+
+  Keep the placeholder as the committed content: a real built index.html names
+  hashed asset filenames that are themselves gitignored, so committing one would
+  leave a clean checkout serving a page whose bundle 404s.
+-->
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>InsureNation</title>
+  </head>
+  <body>
+    <p>Frontend not built. Run <code>npm run build</code> in <code>frontend/</code>.</p>
+  </body>
+</html>

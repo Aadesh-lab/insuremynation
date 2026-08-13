@@ -1,0 +1,7 @@
+# The single .gitattributes for the repo — backend/ and frontend/ have none of
+# their own, so every rule is visible here.
+
+# start.sh must keep LF endings or the Alpine /bin/sh shebang breaks on deploy.
+# The path is explicit rather than a bare *.sh so the rule's purpose stays obvious.
+backend/start.sh text eol=lf
+*.sh text eol=lf

@@ -1,0 +1,12 @@
+package apperror
+
+type AppError struct {
+	Code    int    `json:"-"`
+	Message string `json:"error"`
+}
+
+func (e *AppError) Error() string { return e.Message }
+
+func New(code int, message string) *AppError {
+	return &AppError{Code: code, Message: message}
+}

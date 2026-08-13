@@ -1,0 +1,156 @@
+import { BLUE, DEEP } from '../../data/site';
+
+/**
+ * One bubble. Assistant on the left with the brand mark, visitor on the right with a
+ * neutral avatar.
+ *
+ * `text` is rendered as text, never as markup: it is model output built from
+ * retrieved document content, so treating it as HTML would be an injection path
+ * straight through the knowledge base.
+ */
+export default function Message({ role, text, streaming, sources }) {
+  const isUser = role === 'user';
+
+  return (
+    <div
+      style={{
+        display: 'flex',
+        flexDirection: isUser ? 'row-reverse' : 'row',
+        alignItems: 'flex-end',
+        gap: 8,
+        alignSelf: isUser ? 'flex-end' : 'flex-start',
+        maxWidth: '88%',
+      }}
+    >
+      {isUser ? <UserAvatar /> : <BotAvatar />}
+
+      <div style={{ minWidth: 0 }}>
+        <div
+          style={{
+            background: isUser ? DEEP : '#f1f5f9',
+            color: isUser ? '#fff' : 'rgb(15,23,42)',
+            borderRadius: 14,
+            // Squared-off corner on the speaker's side, so the bubble points at its
+            // avatar the way the design does.
+            borderBottomRightRadius: isUser ? 4 : 14,
+            borderBottomLeftRadius: isUser ? 14 : 4,
+            padding: '10px 13px',
+            fontWeight: 300,
+            fontSize: 14,
+            lineHeight: 1.55,
+            whiteSpace: 'pre-wrap',
+            overflowWrap: 'anywhere',
+          }}
+        >
+          {text}
+          {streaming && !text && <TypingDots />}
+        </div>
+
+        {/* Citations, if the answer carried any. The backend strips chunk_text and
+            file_id upstream, so only a file name and score ever arrive here. */}
+        {!streaming && sources?.length > 0 && (
+          <div
+            style={{
+              marginTop: 5,
+              fontSize: 11,
+              lineHeight: 1.4,
+              color: 'rgba(0,74,173,0.6)',
+            }}
+          >
+            Source: {dedupe(sources).join(', ')}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/** One answer usually cites several chunks of the same file; show each name once. */
+function dedupe(sources) {
+  const seen = [];
+  for (const s of sources) {
+    const name = s?.file_name;
+    if (name && !seen.includes(name)) seen.push(name);
+  }
+  return seen;
+}
+
+function TypingDots() {
+  return (
+    <span
+      style={{ display: 'inline-flex', gap: 4, alignItems: 'center', height: 14 }}
+      aria-label="Assistant is typing"
+      role="status"
+    >
+      {[0, 1, 2].map((i) => (
+        <span
+          key={i}
+          className="imn-chat-dot"
+          style={{
+            width: 6,
+            height: 6,
+            borderRadius: '50%',
+            background: 'rgba(0,74,173,0.55)',
+            display: 'block',
+          }}
+        />
+      ))}
+    </span>
+  );
+}
+
+function BotAvatar() {
+  return (
+    <div
+      aria-hidden="true"
+      style={{
+        width: 26,
+        height: 26,
+        borderRadius: 7,
+        flexShrink: 0,
+        background: `linear-gradient(180deg, ${BLUE} 0%, ${DEEP} 150%)`,
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+        <path
+          d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5Z"
+          stroke="#fff"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </div>
+  );
+}
+
+function UserAvatar() {
+  return (
+    <div
+      aria-hidden="true"
+      style={{
+        width: 26,
+        height: 26,
+        borderRadius: '50%',
+        flexShrink: 0,
+        background: 'rgba(0,74,173,0.12)',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}
+    >
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+        <path
+          d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2M12 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"
+          stroke={BLUE}
+          strokeWidth="1.8"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      </svg>
+    </div>
+  );
+}
