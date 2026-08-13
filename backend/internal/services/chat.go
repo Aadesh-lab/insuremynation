@@ -19,6 +19,7 @@ import (
 	"imagine_backend/internal/dto"
 	"imagine_backend/internal/logger"
 )
+
 const (
 	maxMessageLen = 2000
 	maxHistory    = 10
@@ -32,15 +33,30 @@ const (
 
 	topK        = 5
 	temperature = 0.2
+	// Contact details are stated here, not left to retrieval, for the same reason
+	// identity is. A question like "how do I make a claim?" retrieves the claims
+	// section but not the adviser section, so an instruction to quote the number
+	// "from the context" had no number to quote — and the model filled the hole with
+	// "[Insert Phone Number]", which shipped to visitors as an apparent request for
+	// *their* details. A handful of fixed facts the assistant must never get wrong
+	// belong in the prompt, where they are present on every call.
+	//
+	// These mirror PHONE and EMAIL in frontend/src/data/site.js, which is the source
+	// of truth for the site. If you change them there, change them here too.
+	contactPhone = "+91 99101 69789"
+	contactEmail = "nehal@insuremynation.com"
+
 	systemPrompt = "You are the InsureMyNation Assistant, the chat assistant on the InsureMyNation website. " +
 		"InsureNation is a boutique, IRDAI-registered insurance advisory firm in Connaught Place, New Delhi, " +
 		"which advises on health, life, car, bike, travel and marine cover and runs a claims and mis-selling support desk. " +
 		"Answer questions about the firm, its team, its cover, its careers and how to get in touch using only the provided context. " +
 		"You may always explain what you are and what you can help with, even when the context does not cover it. " +
 		"If the context does not answer something else, say so plainly — never guess and never fall back on general knowledge. " +
-		"Whenever you hand a visitor over to a person, whether they asked for one or you cannot answer, write out the actual " +
-		"phone number and email address from the context in your reply. Saying that a phone number exists without giving it " +
-		"leaves them with nothing to act on. " +
+		"The firm's contact details are exactly these, and you always know them regardless of the context: " +
+		"phone " + contactPhone + ", email " + contactEmail + ". " +
+		"Whenever you hand a visitor over to a person, whether they asked for one or you cannot answer, write those out in full. " +
+		"Never write a placeholder such as [Insert Phone Number] or [Insert Email Address], and never ask the visitor to " +
+		"supply the firm's own contact details — use the values above. " +
 		"Never invent policy details, prices, or coverage terms: a premium, an eligibility decision, or the wording of a " +
 		"specific policy always needs a human adviser, so offer to have one call them back instead. " +
 		"Keep answers short and plain — a few sentences, no marketing language."
@@ -56,15 +72,16 @@ var (
 	errUpstreamFailed  = apperror.New(http.StatusBadGateway, "chatbot unavailable")
 	errNotFound        = apperror.New(http.StatusNotFound, "not found")
 )
+
 const (
 	msgBurstQuota  = 30
 	msgBurstWindow = 10 * time.Minute
 
 	msgDailyQuota  = 150
 	msgDailyWindow = 24 * time.Hour
-	ipWindow = 10 * time.Minute
-	sessionQuota = 20
-	maxIPBuckets = 100_000
+	ipWindow       = 10 * time.Minute
+	sessionQuota   = 20
+	maxIPBuckets   = 100_000
 )
 
 type ipBucket struct {
@@ -77,6 +94,7 @@ var (
 	ipBuckets   = map[string]*ipBucket{}
 	ipLastSweep time.Time
 )
+
 func allowIP(ip string, now time.Time) bool {
 	return allowN("burst:"+ip, msgBurstQuota, msgBurstWindow, now) &&
 		allowN("day:"+ip, msgDailyQuota, msgDailyWindow, now)
@@ -120,6 +138,7 @@ type ragConfig struct {
 }
 
 var notConfiguredOnce sync.Once
+
 func loadRAGConfig() (ragConfig, error) {
 	cfg := ragConfig{
 		apiKey:  os.Getenv("RAG_API_KEY"),
@@ -381,8 +400,10 @@ func RelaySSE(w io.Writer, flush func(), body io.Reader) {
 		}
 	}
 }
+
 const ssePrefix = "data:"
 const sseOut = "data: "
+
 func sanitizeSSELine(line []byte) []byte {
 	trimmed := bytes.TrimRight(line, "\r\n")
 	if !bytes.HasPrefix(trimmed, []byte(ssePrefix)) {

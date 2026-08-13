@@ -9,7 +9,9 @@ import (
 	"imagine_backend/internal/dto"
 	"imagine_backend/internal/services"
 )
+
 const maxRequestBody = 1 << 20.
+
 func limitBody(c *gin.Context) {
 	c.Request.Body = http.MaxBytesReader(c.Writer, c.Request.Body, maxRequestBody)
 }

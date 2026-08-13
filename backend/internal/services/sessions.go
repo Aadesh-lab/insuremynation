@@ -28,6 +28,7 @@ var (
 	sessOwners    = map[string]sessionOwner{}
 	sessLastSweep time.Time
 )
+
 func rememberSession(client, sessionID string, now time.Time) {
 	if sessionID == "" {
 		return

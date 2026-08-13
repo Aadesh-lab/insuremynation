@@ -5,6 +5,7 @@ import (
 
 	"imagine_backend/internal/handler"
 )
+
 func RegisterRoutes(r *gin.Engine) {
 	api := r.Group("/api")
 	api.GET("/health", handler.Health)

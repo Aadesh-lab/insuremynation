@@ -14,6 +14,7 @@ import (
 	"imagine_backend/internal/logger"
 	"imagine_backend/internal/middleware"
 )
+
 func StartServer() {
 	config.LoadConfig()
 	logger.InitLogger()
