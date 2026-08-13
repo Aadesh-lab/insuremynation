@@ -81,13 +81,7 @@ export default function ChatPanel({ chat, onClose }) {
 
         <Message role="assistant" text={GREETING} />
         {messages.map((m) => (
-          <Message
-            key={m.id}
-            role={m.role}
-            text={m.text}
-            streaming={m.streaming}
-            sources={m.sources}
-          />
+          <Message key={m.id} role={m.role} text={m.text} streaming={m.streaming} />
         ))}
 
         {error && <ErrorNotice error={error} onRetry={() => { clearError(); submit(error.retry); }} />}

@@ -57,19 +57,21 @@ function saveSessionId(id) {
 }
 
 /**
- * Parses an SSE byte stream, invoking `onText` per token and returning the sources
- * from the terminal frame.
+ * Parses an SSE byte stream, invoking `onText` per token.
  *
  * Written against what the backend actually emits: `data: {...}` frames carrying
- * `text`/`done`/`sources`, a `data: [DONE]` sentinel, and blank separator lines. The
- * final chunk may arrive without a trailing newline, so the buffer is flushed at the
- * end rather than discarded — dropping it would silently truncate the last token.
+ * `text` and `done`, a `data: [DONE]` sentinel, and blank separator lines. The final
+ * chunk may arrive without a trailing newline, so the buffer is flushed at the end
+ * rather than discarded — dropping it would silently truncate the last token.
+ *
+ * Frames also carry a `sources` array, which is deliberately ignored: the knowledge
+ * base is one generated file, so the only citation available is the name of a build
+ * artefact. Nothing about it is useful to a visitor.
  */
 async function readSSE(res, onText, signal) {
   const reader = res.body.getReader();
   const decoder = new TextDecoder();
   let buffer = '';
-  let sources = [];
   let done = false;
 
   const handleLine = (raw) => {
@@ -87,7 +89,6 @@ async function readSSE(res, onText, signal) {
     } catch {
       return; // A partial or malformed frame is not worth failing the answer over.
     }
-    if (Array.isArray(frame.sources) && frame.sources.length) sources = frame.sources;
     if (frame.text) onText(frame.text);
     if (frame.done) done = true;
   };
@@ -111,7 +112,6 @@ async function readSSE(res, onText, signal) {
     if (!signal?.aborted) reader.cancel().catch(() => {});
   }
 
-  return sources;
 }
 
 let nextId = 0;
@@ -230,7 +230,7 @@ export function useChat() {
             prev.map((m) => (m.id === replyId ? { ...m, text: m.text + chunk } : m))
           );
 
-        const sources = await readSSE(res, append, controller.signal);
+        await readSSE(res, append, controller.signal);
 
         setMessages((prev) =>
           prev.map((m) =>
@@ -238,7 +238,6 @@ export function useChat() {
               ? {
                   ...m,
                   streaming: false,
-                  sources,
                   // An empty answer would render as a blank bubble, which reads as a
                   // broken UI rather than a failure.
                   text: m.text || "I don't have an answer for that. Please try rephrasing.",

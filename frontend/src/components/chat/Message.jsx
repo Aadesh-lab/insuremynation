@@ -8,7 +8,7 @@ import { BLUE, DEEP } from '../../data/site';
  * retrieved document content, so treating it as HTML would be an injection path
  * straight through the knowledge base.
  */
-export default function Message({ role, text, streaming, sources }) {
+export default function Message({ role, text, streaming }) {
   const isUser = role === 'user';
 
   return (
@@ -46,33 +46,14 @@ export default function Message({ role, text, streaming, sources }) {
           {streaming && !text && <TypingDots />}
         </div>
 
-        {/* Citations, if the answer carried any. The backend strips chunk_text and
-            file_id upstream, so only a file name and score ever arrive here. */}
-        {!streaming && sources?.length > 0 && (
-          <div
-            style={{
-              marginTop: 5,
-              fontSize: 11,
-              lineHeight: 1.4,
-              color: 'rgba(0,74,173,0.6)',
-            }}
-          >
-            Source: {dedupe(sources).join(', ')}
-          </div>
-        )}
+        {/* No citation line. The knowledge base is a single generated file, so the
+            only thing a citation could name is "insuremynation-website.txt" — an
+            internal build artefact that means nothing to a visitor and reads as a
+            leak. The backend still strips chunk_text and file_id upstream; this is
+            just the last place a filename could have surfaced. */}
       </div>
     </div>
   );
-}
-
-/** One answer usually cites several chunks of the same file; show each name once. */
-function dedupe(sources) {
-  const seen = [];
-  for (const s of sources) {
-    const name = s?.file_name;
-    if (name && !seen.includes(name)) seen.push(name);
-  }
-  return seen;
 }
 
 function TypingDots() {
