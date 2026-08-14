@@ -1,25 +1,17 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { BLUE, DEEP, EMAIL, PHONE } from '../../data/site';
-import { journeyFor } from './journeys';
 import Message from './Message';
 
+/**
+ * The panel is backend-agnostic: `greeting`, `chips` and `finished` come from whichever
+ * client chatBackend.js selected, so nothing here knows whether the funnel is ours or the
+ * orchestrator's.
+ */
 export default function ChatPanel({ chat, onClose }) {
-  const { messages, pending, error, send, clearError, reset, product } = chat;
+  const { messages, pending, error, send, clearError, reset, greeting, chips, finished } = chat;
   const [draft, setDraft] = useState('');
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
-
-  // The funnel for this page — its opening question, and a row of tappable answers per
-  // step. See journeys.js for why the chips send answers rather than questions.
-  const journey = journeyFor(product);
-
-  // ponytail: the step is the count of visitor messages. That stays aligned with what
-  // the assistant just asked only because the per-product system prompt pins the
-  // question order. Someone who types a freeform answer instead of tapping still
-  // advances it and sees the next step's chips — redundant at worst, never broken. If
-  // it ever drifts, have the model name the step it is on and key off that instead.
-  const step = messages.filter((m) => m.role === 'user').length;
-  const chips = journey.steps[step]?.chips ?? null;
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -66,8 +58,9 @@ export default function ChatPanel({ chat, onClose }) {
       <Header
         onClose={onClose}
         // Only offered once there is something to clear, so it does not sit there
-        // inviting a visitor to reset an empty conversation.
-        onReset={messages.length > 0 ? reset : null}
+        // inviting a visitor to reset an empty conversation — and always once the
+        // conversation is finished, since it is then the only way to start another.
+        onReset={messages.length > 0 || finished ? reset : null}
       />
 
       <div
@@ -86,7 +79,9 @@ export default function ChatPanel({ chat, onClose }) {
       >
         <DayDivider />
 
-        <Message role="assistant" text={journey.greeting} />
+        {/* Empty on the orchestrator path, where the opening message is a real message
+            that arrives from `init` rather than something rendered locally. */}
+        {greeting && <Message role="assistant" text={greeting} />}
         {messages.map((m) => (
           <Message key={m.id} role={m.role} text={m.text} streaming={m.streaming} />
         ))}
@@ -94,10 +89,10 @@ export default function ChatPanel({ chat, onClose }) {
         {error && <ErrorNotice error={error} onRetry={() => { clearError(); submit(error.retry); }} />}
       </div>
 
-      {/* The row disappears once the funnel runs out of steps: past that point the
-          assistant is summarising and handing over, and the visitor has found their
-          words. It is also hidden while an error is showing, so the retry link is the
-          only thing to click. */}
+      {/* Hidden when the assistant has not offered a choice, and while an error is
+          showing so the retry link is the only thing to click. Never the *only* way to
+          answer: the composer stays available so a visitor can type "we are four in
+          Gurgaon" instead of picking from the list. */}
       {chips && !error && (
         <div
           style={{
@@ -114,9 +109,11 @@ export default function ChatPanel({ chat, onClose }) {
               className="imn-chat-chip"
               disabled={pending}
               onClick={() => submit(s.message, s.product)}
-              // Without this a screen reader announces only "Health", which says
-              // nothing about what tapping it does.
-              aria-label={s.message}
+              // Our own chips are short labels standing in for a full sentence, and a
+              // screen reader announcing only "Health" says nothing about what tapping it
+              // does. The orchestrator's chips send their label verbatim, so there the
+              // visible text already is the message and repeating it would be noise.
+              aria-label={s.message === s.label ? undefined : s.message}
               style={{
                 appearance: 'none',
                 background: '#fff',
@@ -138,13 +135,17 @@ export default function ChatPanel({ chat, onClose }) {
         </div>
       )}
 
-      <Composer
-        draft={draft}
-        setDraft={setDraft}
-        pending={pending}
-        inputRef={inputRef}
-        onSubmit={() => submit()}
-      />
+      {finished ? (
+        <FinishedNotice onReset={reset} />
+      ) : (
+        <Composer
+          draft={draft}
+          setDraft={setDraft}
+          pending={pending}
+          inputRef={inputRef}
+          onSubmit={() => submit()}
+        />
+      )}
     </div>
   );
 }
@@ -279,6 +280,9 @@ function DayDivider() {
  */
 function ErrorNotice({ error, onRetry }) {
   const rateLimited = /too many/i.test(error.message);
+  // Some messages already carry the number — the orchestrator client's 403/404 text does —
+  // and printing it twice in one notice reads as a bug.
+  const hasNumber = error.message.includes(PHONE);
   return (
     <div
       role="alert"
@@ -294,7 +298,7 @@ function ErrorNotice({ error, onRetry }) {
       }}
     >
       <div>{error.message}</div>
-      {!rateLimited && (
+      {!rateLimited && !hasNumber && (
         <div style={{ marginTop: 6, fontSize: 12, color: 'rgba(0,30,71,0.7)' }}>
           You can also call {PHONE} or email {EMAIL}.
         </div>
@@ -320,6 +324,52 @@ function ErrorNotice({ error, onRetry }) {
           Try again
         </button>
       )}
+    </div>
+  );
+}
+
+/**
+ * Replaces the composer once the conversation reaches a terminal state.
+ *
+ * The composer is removed rather than merely disabled because the session is deleted
+ * server-side: sending into it would silently open a *second* conversation, and since that
+ * conversation ends in a lead, the sales desk would get the same person twice.
+ */
+function FinishedNotice({ onReset }) {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        gap: 8,
+        padding: '12px 14px',
+        borderTop: '1px solid rgba(0,74,173,0.12)',
+        flexShrink: 0,
+        background: '#fff',
+        fontSize: 13,
+        fontWeight: 300,
+        color: 'rgba(0,30,71,0.7)',
+      }}
+    >
+      <span>This chat is complete.</span>
+      <button
+        type="button"
+        onClick={onReset}
+        style={{
+          appearance: 'none',
+          border: 0,
+          background: 'none',
+          padding: 0,
+          font: 'inherit',
+          fontWeight: 500,
+          color: BLUE,
+          cursor: 'pointer',
+          textDecoration: 'underline',
+        }}
+      >
+        Start a new chat
+      </button>
     </div>
   );
 }

@@ -1,12 +1,48 @@
 # InsureMyNation assistant — user flow
 
-This is the specification of what the chat assistant does, turn by turn, on the live site.
+## Status: the replacement has landed
 
-It exists because the assistant is going to be **replaced by a CRM-connected one**. This
-document is what the replacement has to reproduce, and — in the last two sections — what it
-has to add. Everything described as *today* is implemented and verified against the live
-knowledge base; everything under **Lead capture** is not built yet and is written as a
-contract to build against.
+The CRM-connected assistant this document was written for now exists, and the site talks to
+it. `frontend/src/components/chat/chatBackend.js` chooses:
+
+| `CHAT_BACKEND` | what runs |
+| --- | --- |
+| `'orchestrator'` **(live)** | imagine.bo's headless API, called direct from the browser. See `HEADLESS_CHAT_INTEGRATION.md` and `useHeadlessChat.js` |
+| `'proxy'` | our own `/v1/*` Go service, the funnel below, no lead capture. Kept as the rollback |
+
+**Three things moved to their side:** the funnel questions, the system prompt, and the lead
+capture. Their assistant asks for a name and mobile **once**, at the end, with a consent line,
+and writes the lead to the CRM — so:
+
+- **§6 below is superseded.** No `POST /v1/lead` is needed; do not build one, and do not add a
+  contact form of our own anywhere in the panel. The lead is captured either way and the
+  visitor would be asked twice.
+- **§4 and §7 still stand** as the record of what our own funnel and proxy do, because the flag
+  can still select them. §5 describes the proxy path's errors; the orchestrator path's are in
+  the integration guide.
+
+Their funnel turned out to be near-identical to the one below, down to the escape hatch
+("Elsewhere in India - I will pass the city to the adviser"), so the flow a visitor walks is
+substantially the same as what §3 describes. What differs: **no streaming** (one request, one
+whole reply), **no history sent** from our side, and chips are parsed out of `- ` lines in the
+reply rather than driven by `journeys.js`.
+
+Two live findings worth carrying, both raised with them:
+
+- **The domain allowlist does not gate `/widget-proxy/init`.** A request with
+  `Origin: https://evil.example` created run 5645 and executed a model turn. Combined with
+  "nothing is rate-limited on this path" in their §Things that will bite you, the public widget
+  token is the only thing in front of a billed endpoint.
+- **`context_variables.product` is not honoured.** `/?product=life` sent with `product: "life"`
+  still opened the generic "Which cover are you looking for?" (run 5648), where their guide says
+  it "wins over `page`". Our client sends it exactly as documented; the resolution is theirs.
+
+---
+
+## What our own assistant does (the `'proxy'` path)
+
+Everything below describes `CHAT_BACKEND = 'proxy'`: turn by turn, verified against the live
+knowledge base.
 
 Read it with `frontend/src/components/chat/journeys.js` (the funnels) and
 `backend/internal/services/chat.go` (`productPrompts`, the per-page instructions) open.
@@ -171,10 +207,20 @@ to client IP server-side with a 24h TTL.
 
 ---
 
-## 6. Lead capture — not built, specified here
+## 6. Lead capture — SUPERSEDED
 
-The funnel exists to produce a qualified lead. Today it produces one and throws it away: five
-structured answers, on the page for the product they want, and nothing catches them.
+**Do not build this.** The orchestrator captures the lead itself (see Status, above): name and
+mobile once at the end, with a consent line, straight into the CRM. This section is kept only
+as the record of what the requirement was, and because the field vocabulary in §4 is still what
+a lead should be segmented on.
+
+What is still worth reading here: the notes on normalising typed answers to the chip
+vocabulary, on a partial funnel being a lead, and on `landed_from` — that last one is ours to
+get right, and `frontend/src/components/chat/pageContext.js` now does, first-seen per tab.
+
+The funnel exists to produce a qualified lead. On the `'proxy'` path it produces one and throws
+it away: five structured answers, on the page for the product they want, and nothing catches
+them.
 
 ### The object to capture
 
@@ -288,7 +334,14 @@ Everything here survives a rewrite of the UI. Each of these was a bug once.
 
 ## 8. Open items
 
-- **No lead capture** — §6. The funnel's output is currently discarded.
+- **The orchestrator's `init` is not origin-gated and not rate-limited** — see Status. Theirs to
+  fix; a browser-side cap would be protection that is not there, since anyone can call the
+  endpoint with `curl`.
+- **`context_variables.product` is ignored**, so a `/?product=…` ad landing gets the generic
+  opener. Theirs to fix. A one-line workaround exists on our side — send the product page's
+  pathname as `page` — but it would put a URL the visitor never visited into their reporting,
+  so it is not being done without their say-so.
+- **No lead capture on the `'proxy'` path** — §6. Only matters if the flag is rolled back.
 - **`frontend/src/data/site.js:12` states a different office address** from `Contact.jsx`
   (Arunachal Building / Barakhamba Road vs Ambadeep Building / Kasturba Gandhi Marg), so the
   live site shows both. The corpus uses the Contact page's.

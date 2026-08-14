@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { BLUE, DEEP } from '../../data/site';
+import { useActiveChat } from './chatBackend';
 import { productForPage } from './journeys';
-import { useChat } from './useChat';
 import ChatPanel from './ChatPanel';
 import './chat.css';
 
@@ -18,9 +18,11 @@ import './chat.css';
 export default function ChatWidget() {
   const [open, setOpen] = useState(false);
   // Ads run per product line, so the page a visitor lands on already says which cover
-  // they came for. It opens that product's funnel instead of asking again.
+  // they came for, and the funnel opens on that rather than asking again. Which backend
+  // resolves it is chatBackend.js's business; on the orchestrator path this argument is
+  // unused, because that client reads the page context itself at `init`.
   const { pathname, search } = useLocation();
-  const chat = useChat(productForPage(pathname, search));
+  const chat = useActiveChat(productForPage(pathname, search));
   const launcherRef = useRef(null);
 
   const openPanel = useCallback(() => {

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { journeyFor } from './journeys';
 
 /**
  * Chat state and transport for the assistant panel.
@@ -314,6 +315,16 @@ export function useChat(pageProduct) {
     await init();
   }, [init]);
 
+  // Frozen once the conversation starts, the current page's product until then.
+  const journey = journeyFor(product ?? pageProduct ?? null);
+
+  // ponytail: the step is the count of visitor messages. That stays aligned with what the
+  // assistant just asked only because the per-product system prompt pins the question
+  // order. Someone who types a freeform answer instead of tapping still advances it and
+  // sees the next step's chips — redundant at worst, never broken. The orchestrator client
+  // has no equivalent problem: its chips come from the reply it is answering.
+  const step = messages.filter((m) => m.role === 'user').length;
+
   return {
     messages,
     pending,
@@ -322,7 +333,9 @@ export function useChat(pageProduct) {
     init,
     reset,
     clearError: () => setError(null),
-    // Frozen once the conversation starts, the current page's product until then.
-    product: product ?? pageProduct ?? null,
+    greeting: journey.greeting,
+    chips: journey.steps[step]?.chips ?? null,
+    // This path has no terminal state — there is nothing to capture, so nothing to finish.
+    finished: false,
   };
 }

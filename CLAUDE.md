@@ -24,8 +24,10 @@ leave the service's Root Directory empty so the build context is the repo root.
 
 Deployed at https://insuremynation-production.up.railway.app.
 
-Because the site and the API share an origin, the chat widget's `baseUrl` is just
-`window.location.origin` — no CORS, and no build-time URL to keep in sync.
+The site and our own API share an origin, so the `'proxy'` chat client uses relative `/v1/*`
+paths — no CORS and no build-time URL to keep in sync. The `'orchestrator'` client is the
+exception: it is cross-origin by design, hardcodes `https://orchestrator.imagine.bo`, and
+depends on our origins being on imagine.bo's allowlist. See **The chat** below.
 
 Everything here is on GitHub, `backend/` and the deploy files included. Upstream authors
 the site itself, so when pulling expect it to own `frontend/src/pages`,
@@ -45,11 +47,17 @@ npm run preview          # serve the production build
 npm run images           # regenerate public/assets/ from the design handoff bundle
 node scripts/export-kb.mjs   # regenerate the chatbot knowledge-base corpus
 
+node scripts/check-split-options.mjs   # chat: the reply-to-chips parser
+node scripts/check-page-context.mjs    # chat: first-seen landed_from / referrer
+
 go build ./... && go vet ./... && go test ./...
 ```
 
-There is no lint or test setup for the frontend; verification there is visual. The backend
-has all three.
+There is no lint or test framework in the frontend and it does not need one. The two
+`scripts/check-*.mjs` files are plain `node` + `assert` and cover the only two pieces of the
+chat client that fail *silently* — a broken parser just stops rendering chips, and broken
+attribution just reports nothing. Run them after touching either. Everything else in the
+frontend is verified visually; the backend has build, vet and test.
 
 ## The frontend
 
@@ -108,10 +116,48 @@ reshapes it through `[data-r="..."]` media queries. That structure is kept intac
   (q90) rather than the lossless q100 the rest of `public/assets/` uses, and `npm run
   images` will not reproduce them.
 
-## The chat backend
+## The chat
 
-It exists for exactly one reason: **the RAG API key must never reach the browser.** Two
-things follow that are easy to break.
+**There are two assistants, and `frontend/src/components/chat/chatBackend.js` picks one.**
+
+| `CHAT_BACKEND` | client | who owns the funnel, prompt and lead capture |
+| --- | --- | --- |
+| `'orchestrator'` **(live)** | `useHeadlessChat.js`, calling `orchestrator.imagine.bo` **direct from the browser** | imagine.bo. Documented in `HEADLESS_CHAT_INTEGRATION.md` |
+| `'proxy'` | `useChat.js`, calling our own `/v1/*` | us — `journeys.js` and `productPrompts` in `chat.go`. No lead capture at all |
+
+Both hooks return the same shape (`greeting`, `chips`, `finished`, …) so `ChatPanel` never
+learns which is live. `CHAT_BACKEND` is a **module constant on purpose**: `useActiveChat`
+calls one hook or the other, and a value that could change at runtime would reorder hooks
+and crash React. Flipping it is the rollback, and it is a one-line commit.
+
+The proxy path is kept working only until the orchestrator one has proven itself on real
+traffic; after that `chat.go`, `sessions.go`, `handler/chat.go`, `journeys.js`, `useChat.js`
+and the `RAG_*` variables all go in one deletion commit. Until then, changes to the panel
+must keep both paths rendering.
+
+Two things about the orchestrator path that are easy to get wrong:
+
+- **`landed_from` and `referrer` are first-seen, not current** (`pageContext.js`). A visitor
+  lands on `/health-insurance?utm_source=google`, browses to `/about`, then opens the chat —
+  read live, the UTMs are already gone and the attribution is empty on exactly the journeys
+  worth measuring. `node scripts/check-page-context.mjs` covers it.
+- **Chips are parsed out of the reply** (`splitOptions.js`), from the last contiguous run of
+  `- ` lines. The integration guide's own version of that parser walks up from the final line
+  and stops at the first non-option — which finds nothing, because the live opener ends with
+  a line of prose *after* the list. `node scripts/check-split-options.mjs` pins the real
+  shape.
+
+Nothing else in the panel changes between backends, and two properties must survive either:
+`Message.jsx` renders text as a child rather than `innerHTML` (with `pre-wrap`, since replies
+carry newlines and no markdown), and a finished conversation removes the composer rather than
+disabling it — sending into a deleted session silently opens a second one, which means a
+duplicate lead in the CRM.
+
+## The chat backend (the `'proxy'` path)
+
+It exists for exactly one reason: **the RAG API key must never reach the browser.** That
+reason does not apply to the orchestrator path, which has no key at all — which is why that
+path needs no backend of ours. Two things follow that are easy to break.
 
 **The routes are not ours to name.** The client is our own React panel in
 `frontend/src/components/chat/`, but the paths are still the upstream's — `/v1/kb`,
