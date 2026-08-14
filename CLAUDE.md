@@ -9,7 +9,7 @@ Two directories, **one** deployable.
 | path | what |
 | --- | --- |
 | `frontend/` | the React site (Vite + React 18 + React Router 6 + Framer Motion) |
-| `backend/` | Go service: a secure proxy for the imagine.bo RAG chatbot, which also serves the built site |
+| `backend/` | Go service: serves the built site from an embedded filesystem, and nothing else |
 
 This file is the **only** `CLAUDE.md` in the repo, and `README.md`, `.gitignore` and
 `.gitattributes` are likewise single and at the root. Do not re-add per-directory copies.
@@ -22,19 +22,21 @@ the build needs both directories: it builds the site with npm, embeds the output
 Go binary via `//go:embed` (`backend/internal/fs.go`), and ships one container. On Railway
 leave the service's Root Directory empty so the build context is the repo root.
 
-Deployed at https://insuremynation-production.up.railway.app.
-
-The site and our own API share an origin, so the `'proxy'` chat client uses relative `/v1/*`
-paths — no CORS and no build-time URL to keep in sync. The `'orchestrator'` client is the
-exception: it is cross-origin by design, hardcodes `https://orchestrator.imagine.bo`, and
-depends on our origins being on imagine.bo's allowlist. See **The chat** below.
+Deployed at **https://insuremynation.imaginebo.app** — that is the canonical host and the
+only one the chat works on, because imagine.bo's orchestrator enforces a domain allowlist and
+only this domain is on it. The Railway subdomain
+(`insuremynation-production.up.railway.app`) still answers and serves the same build, but its
+chat gets a `403 Domain not allowed`, which presents as a page that looks fine above a dead
+assistant. `CANONICAL_HOST` makes the service redirect page requests there; see
+`canonicalHost` in `server.go`. Point ads and anything else public at the custom domain, and
+when adding a new origin — a staging host, a dev port — get it allowlisted first or its chat
+will 403 too.
 
 Everything here is on GitHub, `backend/` and the deploy files included. Upstream authors
 the site itself, so when pulling expect it to own `frontend/src/pages`,
 `frontend/src/data`, `frontend/src/styles` and `frontend/public`. The chat is ours and
 lives in `frontend/src/components/chat/`; `frontend/index.html` is byte-identical to
-upstream, and the only other local frontend edits are the `<ChatWidget/>` mount in
-`App.jsx` and the `/v1` dev proxy in `vite.config.js`.
+upstream, and the only other local frontend edit is the `<ChatWidget/>` mount in `App.jsx`.
 
 ## Commands
 
@@ -45,7 +47,7 @@ npm run dev              # Vite dev server on http://localhost:5173
 npm run build            # production build into frontend/dist/
 npm run preview          # serve the production build
 npm run images           # regenerate public/assets/ from the design handoff bundle
-node scripts/export-kb.mjs   # regenerate the chatbot knowledge-base corpus
+node scripts/export-kb.mjs   # regenerate kb-corpus.txt from the site's own copy
 
 node scripts/check-split-options.mjs   # chat: the reply-to-chips parser
 node scripts/check-page-context.mjs    # chat: first-seen landed_from / referrer
@@ -118,25 +120,34 @@ reshapes it through `[data-r="..."]` media queries. That structure is kept intac
 
 ## The chat
 
-**There are two assistants, and `frontend/src/components/chat/chatBackend.js` picks one.**
+**The UI is ours; everything behind it is imagine.bo's.** `useHeadlessChat.js` calls
+`orchestrator.imagine.bo` **direct from the browser** against the contract in
+`HEADLESS_CHAT_INTEGRATION_v2.md`. They own the funnel questions, the system prompt and the
+lead capture — their assistant asks for the visitor's contact details itself and writes the
+lead to their CRM.
 
-| `CHAT_BACKEND` | client | who owns the funnel, prompt and lead capture |
-| --- | --- | --- |
-| `'orchestrator'` **(live)** | `useHeadlessChat.js`, calling `orchestrator.imagine.bo` **direct from the browser** | imagine.bo. Documented in `HEADLESS_CHAT_INTEGRATION.md` |
-| `'proxy'` | `useChat.js`, calling our own `/v1/*` | us — `journeys.js` and `productPrompts` in `chat.go`. No lead capture at all |
+We used to run our own proxy for this: a Go service at `/v1/*` holding a RAG API key, with the
+funnel in `journeys.js` and prompts in `chat.go`. All of it is deleted, because the headless
+integration has **no key to hide** — so there was nothing left for a backend of ours to do.
+`git log` has it if the reasoning is ever needed; do not resurrect it to add a feature the
+orchestrator should own.
 
-Both hooks return the same shape (`greeting`, `chips`, `finished`, …) so `ChatPanel` never
-learns which is live. `CHAT_BACKEND` is a **module constant on purpose**: `useActiveChat`
-calls one hook or the other, and a value that could change at runtime would reorder hooks
-and crash React. Flipping it is the rollback, and it is a one-line commit.
+What is left, and what each piece is for:
 
-The proxy path is kept working only until the orchestrator one has proven itself on real
-traffic; after that `chat.go`, `sessions.go`, `handler/chat.go`, `journeys.js`, `useChat.js`
-and the `RAG_*` variables all go in one deletion commit. Until then, changes to the panel
-must keep both paths rendering.
+| file | job |
+| --- | --- |
+| `useHeadlessChat.js` | the three-endpoint client: sessions, turns, errors, terminal state |
+| `pageContext.js` | the `context_variables` that decide where the funnel opens, and the attribution |
+| `splitOptions.js` | turns the `- ` lines of a reply into chips |
+| `ChatPanel.jsx` / `Message.jsx` | the panel, per the WhatsApp-style design |
+| `ChatWidget.jsx` | launcher, open/close, Escape |
 
-Two things about the orchestrator path that are easy to get wrong:
+Five things that are easy to get wrong:
 
+- **It only works on an allowlisted origin.** Not a setting of ours — imagine.bo keeps the
+  list, and everything else gets `403 Domain not allowed`. `localhost:5173` is **not** on it
+  today, so the chat cannot be exercised locally; you get the "chat is unavailable" state.
+  Ask them before relying on any new host.
 - **`landed_from` and `referrer` are first-seen, not current** (`pageContext.js`). A visitor
   lands on `/health-insurance?utm_source=google`, browses to `/about`, then opens the chat —
   read live, the UTMs are already gone and the attribution is empty on exactly the journeys
@@ -146,65 +157,53 @@ Two things about the orchestrator path that are easy to get wrong:
   and stops at the first non-option — which finds nothing, because the live opener ends with
   a line of prose *after* the list. `node scripts/check-split-options.mjs` pins the real
   shape.
+- **A finished conversation removes the composer** rather than disabling it. The session is
+  deleted their side, so sending into it opens a *second* conversation — and since a
+  conversation ends in a lead, that is a duplicate in the CRM.
+- **`Message.jsx` renders text as a child, never `innerHTML`**, with `pre-wrap`: replies carry
+  newlines and are explicitly not markdown, so nothing must run them through a renderer.
 
-Nothing else in the panel changes between backends, and two properties must survive either:
-`Message.jsx` renders text as a child rather than `innerHTML` (with `pre-wrap`, since replies
-carry newlines and no markdown), and a finished conversation removes the composer rather than
-disabling it — sending into a deleted session silently opens a second one, which means a
-duplicate lead in the CRM.
+**Never add a contact form to the panel.** Their assistant collects name, mobile and email
+itself as part of the funnel; a second ask means asking twice for something already captured.
 
-## The chat backend (the `'proxy'` path)
+### Mobile
 
-It exists for exactly one reason: **the RAG API key must never reach the browser.** That
-reason does not apply to the orchestrator path, which has no key at all — which is why that
-path needs no backend of ours. Two things follow that are easy to break.
+Below 560px the panel is a full-screen sheet, set in `chat.css` — a 380px floating card on a
+360px phone is not a card. The rules there use `!important` because the components carry their
+sizing inline, which is this codebase's convention. Four of them are not cosmetic:
 
-**The routes are not ours to name.** The client is our own React panel in
-`frontend/src/components/chat/`, but the paths are still the upstream's — `/v1/kb`,
-`/v1/sessions`, `/v1/sessions/:id`, `/v1/query` — because the service was built against the
-hosted imagine.bo widget and mirroring them costs nothing. Two shapes are load-bearing
-regardless of client: `session_id` (never `id`), and an *object* with `messages` from
-`/v1/sessions/:id` (the upstream serves that transcript from a *different* path,
-`/history`). Unlike the hosted widget, our panel *does* read error bodies, so the backend's
-wording for a rate limit or an outage reaches the visitor instead of "Something went wrong."
+- **The height is set from JS** off `window.visualViewport` (`ChatPanel.jsx`), because
+  `inset: 0` is the *layout* viewport and an on-screen keyboard does not shrink that — so the
+  composer would sit underneath the keyboard exactly when it is being typed into. `100dvh`
+  does not solve this; it tracks browser chrome, not keyboards.
+- **The composer is 16px on mobile.** Below that, iOS Safari zooms the page on focus and the
+  visitor cannot zoom back out.
+- **The launcher is hidden while the panel is open** (`.imn-chat-launcher--open`). It is fixed
+  to the same corner at the same z-index and painted after the panel, so it covers the send
+  button.
+- **The composer is not auto-focused on a touch screen.** Focusing it summons the keyboard over
+  half the panel before the visitor has read the question.
 
-**It is not a transparent proxy, in either direction.** `kb_id`, `system_prompt`, `top_k`
-and `temperature` are set server-side so a visitor cannot retarget a query;
-`chunk_text`/`file_id` are stripped from sources on both the plain and streaming paths; and
-the upstream's tenant-scoped `/v1/kb` and `/v1/sessions` are narrowed to one KB and to the
-caller's own sessions. Remove any of those and a leak turns back on.
+## The backend
 
-That includes the per-page behaviour. The browser sends `product` — an **id**, never prompt
-text — and `buildSystemPrompt` looks it up in `productPrompts`; an unrecognised value gets
-the base prompt. **The map lookup is the allowlist.** Concatenate anything from the request
-into `system_prompt` and every visitor can rewrite the assistant. `chat_test.go` covers it.
-The funnels those prompts drive, and the flow end to end, are in
-[user_flow_insurance.md](user_flow_insurance.md) — read that before changing the questions,
-their order, or the chip wording in `frontend/src/components/chat/journeys.js`.
+It serves the embedded site and answers a healthcheck. That is all it does.
 
-Other load-bearing details:
-
-- The per-IP caps in `internal/services/chat.go` are the only abuse control on a public
-  endpoint, and they key on `c.ClientIP()`. That is why `server.go` disables gin's default
-  "trust `X-Forwarded-For` from anyone" and reads `CLIENT_IP_HEADER` instead — which **must**
-  name a header the edge *overwrites* (`X-Real-Ip` on Railway). Naming one the edge does not
-  set is worse than leaving it blank: every caller can then claim any IP.
-- `serveSPA` answers `/api/*` and `/v1/*` misses with JSON 404 rather than the SPA shell,
-  for the widget reason above.
 - Only a placeholder `backend/internal/dist/index.html` is committed; the Docker build
   overlays the real Vite output. Do not commit a real built `index.html` there — it names
   hashed bundles that aren't committed.
-- The knowledge base is generated from the site's own copy by
-  `frontend/scripts/export-kb.mjs`. Re-run it and re-ingest after copy edits. The
-  assistant's *identity* deliberately lives in the system prompt, not the corpus, because
-  retrieval is semantic and a question like "what are you" does not reliably retrieve. The
-  same goes for the qualification funnels: none of what they ask about — family floaters,
-  lakh/crore, NCB, Institute Cargo Clauses — is in the corpus, which is why the chips send
-  *answers* rather than questions.
-- There is **no lead capture**. That is why the prompt forbids asking a visitor for their
-  name, phone or email: a number typed into the chat is read by nobody, so asking for one
-  promises a call back that will not happen. Lift that ban only together with the endpoint
-  that catches the answer — specified in [user_flow_insurance.md](user_flow_insurance.md).
+- `CANONICAL_HOST` redirects page requests to one hostname (`canonicalHost` in `server.go`),
+  which matters because only the custom domain's chat works. `/api/` and `/v1/` are exempt:
+  `/api/health` is what `railway.toml` polls, and a stale cached bundle still calling `/v1/*`
+  should get a JSON 404 rather than a redirect or the SPA shell. `server_test.go` pins both.
+- `serveSPA` answers `/api/*` and `/v1/*` misses with JSON 404 rather than the SPA shell.
+- `CLIENT_IP_HEADER` still feeds `middleware.RateLimiter`, and **must** name a header the edge
+  *overwrites* (`X-Real-Ip` on Railway). Naming one the edge does not set is worse than leaving
+  it blank: every caller can then claim any IP.
+- The `RAG_*` variables are dead — nothing reads them. Remove them from the Railway service.
+
+`frontend/kb-corpus.txt` and `scripts/export-kb.mjs` are kept: the corpus is still how the
+site's own copy reaches a knowledge base, but ingesting it is imagine.bo's side of the line
+now, so re-run the script after copy edits and ask them to re-ingest.
 
 ## Known content bug
 

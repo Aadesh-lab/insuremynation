@@ -2,19 +2,54 @@ import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { BLUE, DEEP, EMAIL, PHONE } from '../../data/site';
 import Message from './Message';
 
-/**
- * The panel is backend-agnostic: `greeting`, `chips` and `finished` come from whichever
- * client chatBackend.js selected, so nothing here knows whether the funnel is ours or the
- * orchestrator's.
- */
 export default function ChatPanel({ chat, onClose }) {
-  const { messages, pending, error, send, clearError, reset, greeting, chips, finished } = chat;
+  const { messages, pending, error, send, clearError, reset, chips, finished } = chat;
   const [draft, setDraft] = useState('');
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
+  const panelRef = useRef(null);
 
+  /**
+   * Keeps the panel inside the *visual* viewport on a phone.
+   *
+   * Full-screen below 560px (see chat.css) means `inset: 0`, which is the layout viewport —
+   * and the on-screen keyboard does not shrink that. So the composer ends up underneath the
+   * keyboard exactly when the visitor wants to type in it. `dvh` does not help either: it
+   * tracks browser chrome, not keyboards.
+   *
+   * visualViewport is the only thing that reports the real figure. Nothing is set on
+   * desktop, where the panel is a fixed-size card and the inline styles already fit.
+   */
   useEffect(() => {
-    inputRef.current?.focus();
+    const vv = window.visualViewport;
+    if (!vv) return undefined;
+    const apply = () => {
+      const el = panelRef.current;
+      if (!el) return;
+      if (window.innerWidth > 560) {
+        el.style.removeProperty('height');
+        return;
+      }
+      el.style.height = `${vv.height}px`;
+    };
+    apply();
+    vv.addEventListener('resize', apply);
+    vv.addEventListener('scroll', apply);
+    window.addEventListener('orientationchange', apply);
+    return () => {
+      vv.removeEventListener('resize', apply);
+      vv.removeEventListener('scroll', apply);
+      window.removeEventListener('orientationchange', apply);
+    };
+  }, []);
+
+  // Focus the composer on open, but not on a touch screen: focusing there summons the
+  // keyboard over half the panel before the visitor has read the question, and the chips
+  // are the answer most of them want anyway.
+  useEffect(() => {
+    if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+      inputRef.current?.focus();
+    }
   }, []);
 
   // Pin to the newest content. Layout effect so the jump happens before paint
@@ -24,15 +59,16 @@ export default function ChatPanel({ chat, onClose }) {
     if (el) el.scrollTop = el.scrollHeight;
   }, [messages, pending, error]);
 
-  const submit = (text, productOverride) => {
+  const submit = (text) => {
     const value = (text ?? draft).trim();
     if (!value || pending) return;
     setDraft('');
-    send(value, productOverride);
+    send(value);
   };
 
   return (
     <div
+      ref={panelRef}
       className="imn-chat-panel"
       role="dialog"
       aria-modal="false"
@@ -79,9 +115,8 @@ export default function ChatPanel({ chat, onClose }) {
       >
         <DayDivider />
 
-        {/* Empty on the orchestrator path, where the opening message is a real message
-            that arrives from `init` rather than something rendered locally. */}
-        {greeting && <Message role="assistant" text={greeting} />}
+        {/* No locally rendered greeting: the opening message is a real message, and it
+            arrives from `init`. */}
         {messages.map((m) => (
           <Message key={m.id} role={m.role} text={m.text} streaming={m.streaming} />
         ))}
@@ -95,6 +130,7 @@ export default function ChatPanel({ chat, onClose }) {
           Gurgaon" instead of picking from the list. */}
       {chips && !error && (
         <div
+          className="imn-chat-chips"
           style={{
             display: 'flex',
             flexWrap: 'wrap',
@@ -102,18 +138,15 @@ export default function ChatPanel({ chat, onClose }) {
             padding: '4px 16px 12px',
           }}
         >
-          {chips.map((s) => (
+          {chips.map((label) => (
             <button
-              key={s.label}
+              key={label}
               type="button"
               className="imn-chat-chip"
               disabled={pending}
-              onClick={() => submit(s.message, s.product)}
-              // Our own chips are short labels standing in for a full sentence, and a
-              // screen reader announcing only "Health" says nothing about what tapping it
-              // does. The orchestrator's chips send their label verbatim, so there the
-              // visible text already is the message and repeating it would be noise.
-              aria-label={s.message === s.label ? undefined : s.message}
+              // The label *is* the message — no aria-label, because it would only repeat
+              // the visible text.
+              onClick={() => submit(label)}
               style={{
                 appearance: 'none',
                 background: '#fff',
@@ -129,7 +162,7 @@ export default function ChatPanel({ chat, onClose }) {
                 textAlign: 'left',
               }}
             >
-              {s.label}
+              {label}
             </button>
           ))}
         </div>
@@ -338,6 +371,7 @@ function ErrorNotice({ error, onRetry }) {
 function FinishedNotice({ onReset }) {
   return (
     <div
+      className="imn-chat-finished"
       style={{
         display: 'flex',
         alignItems: 'center',
@@ -377,6 +411,7 @@ function FinishedNotice({ onReset }) {
 function Composer({ draft, setDraft, pending, inputRef, onSubmit }) {
   return (
     <form
+      className="imn-chat-composer"
       onSubmit={(e) => {
         e.preventDefault();
         onSubmit();

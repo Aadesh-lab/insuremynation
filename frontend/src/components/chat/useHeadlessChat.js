@@ -5,15 +5,22 @@ import { splitOptions } from './splitOptions';
 /**
  * Chat state and transport for the imagine.bo orchestrator.
  *
- * Built to HEADLESS_CHAT_INTEGRATION.md. Three endpoints, JSON in and JSON out, called
+ * Built to HEADLESS_CHAT_INTEGRATION_v2.md. Three endpoints, JSON in and JSON out, called
  * **direct from the browser** — there is no API key in this integration, so unlike the
  * `/v1` proxy in useChat.js there is nothing for our Go service to hold. The widget token
- * ships in the page.
+ * ships in the page. What protects the endpoint instead is a domain allowlist on their
+ * side, which is why the chat only works on an origin they have listed.
  *
- * What moves to their side with this: the funnel questions, the system prompt, and the
- * lead capture. Their assistant asks for a name and mobile once at the end, with a consent
- * line, and writes the lead to the CRM. So this client must NOT add a contact form of its
- * own — the lead is captured either way and the visitor would be asked twice.
+ * What moves to their side with this: the funnel questions, the system prompt, and the lead
+ * capture. Their assistant asks for the visitor's contact details itself, so this client
+ * must NOT add a contact form of its own anywhere in the flow — the lead is captured either
+ * way and the visitor would be asked twice.
+ *
+ * v2 of the guide moves that ask from the end of the funnel to the second or third turn,
+ * and says a visitor who refuses it carries straight on through the questions. **Observed
+ * behaviour is still v1** (run 5684 asked for nothing), so it is not something to code
+ * against — nothing here needs to change when it lands, because the ask is just another
+ * turn of text and we never model whether contact details exist.
  *
  * Same hook shape as useChat.js so ChatPanel does not know which backend is live. See
  * chatBackend.js.
@@ -289,11 +296,13 @@ export function useHeadlessChat() {
   }, [start]);
 
   // Chips come from the last assistant reply, so they track whatever question the
-  // orchestrator actually asked — nothing on this side has to model the funnel.
+  // orchestrator actually asked — nothing on this side has to model the funnel. Each is
+  // sent verbatim as the visitor's message: their side normalises "36 to 50" and "my dad
+  // is 47" to the same stored value.
   const last = messages[messages.length - 1];
   const chips =
     !finished && last?.role === 'assistant' && !last.streaming && last.options?.length
-      ? last.options.map((label) => ({ label, message: label }))
+      ? last.options
       : null;
 
   return {
@@ -304,8 +313,6 @@ export function useHeadlessChat() {
     init,
     reset,
     clearError: () => setError(null),
-    // The opening message is a real message here, so there is no locally rendered greeting.
-    greeting: '',
     chips,
     finished,
   };

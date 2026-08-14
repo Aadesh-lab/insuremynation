@@ -117,16 +117,69 @@
   }
 }
 
-/* Below the header's own breakpoint the panel takes the whole screen — a 380px
-   floating card on a 360px phone is not a card, it is a broken overlay. */
+/* Phones. Everything here is !important because the components carry their sizing inline,
+   which is the convention in this codebase — see the note at the top. */
 @media (max-width: 560px) {
+  /* A 380px floating card on a 360px phone is not a card, it is a broken overlay. The
+     height is also set from JS off visualViewport, because `inset: 0` is the layout
+     viewport and the keyboard does not shrink that; this is the pre-keyboard fallback. */
   .imn-chat-panel {
     position: fixed !important;
     inset: 0 !important;
     width: 100% !important;
-    height: 100% !important;
+    height: 100dvh !important;
+    max-width: none !important;
     max-height: none !important;
     border-radius: 0 !important;
+    /* It fills the screen, so the shadow and the grow-from-the-corner animation have
+       nothing to sit against. */
+    box-shadow: none !important;
+    animation: imn-chat-slide-up 0.24s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  /* The launcher is fixed to the same corner, at the same z-index, painted after the
+     panel — so while the panel is open it covers the send button. */
+  .imn-chat-launcher--open {
+    display: none !important;
+  }
+
+  /* 16px is the threshold below which iOS Safari zooms the page on focus, and a zoomed
+     page cannot be zoomed back out by the visitor. */
+  .imn-chat-input {
+    font-size: 16px !important;
+  }
+
+  /* Thumbs, not cursors: 13px text in 8px of padding is a ~30px target. */
+  .imn-chat-chip {
+    min-height: 40px !important;
+    padding: 10px 14px !important;
+    font-size: 14px !important;
+  }
+  .imn-chat-iconbtn,
+  .imn-chat-send {
+    width: 42px !important;
+    height: 42px !important;
+  }
+
+  /* Clear of the home indicator and the rounded corners. */
+  .imn-chat-composer,
+  .imn-chat-finished {
+    padding-bottom: calc(12px + env(safe-area-inset-bottom)) !important;
+  }
+  .imn-chat-chips {
+    padding-left: calc(16px + env(safe-area-inset-left)) !important;
+    padding-right: calc(16px + env(safe-area-inset-right)) !important;
+  }
+}
+
+@keyframes imn-chat-slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
   }
 }
 

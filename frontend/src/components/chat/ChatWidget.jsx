@@ -1,28 +1,24 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { useLocation } from 'react-router-dom';
 import { BLUE, DEEP } from '../../data/site';
-import { useActiveChat } from './chatBackend';
-import { productForPage } from './journeys';
+import { useHeadlessChat } from './useHeadlessChat';
 import ChatPanel from './ChatPanel';
 import './chat.css';
 
 /**
  * The assistant launcher and panel.
  *
- * Replaces the hosted imagine.bo widget script. That script could not render this
- * design — it has no suggested replies, no date divider and no per-message avatar —
- * and it discarded the backend's error bodies, so a rate limit reached the visitor
- * as "Something went wrong". Owning the UI fixes both and costs no backend change:
- * every call it makes is to the existing `/v1/*` proxy.
+ * Replaces the hosted imagine.bo widget script, which could not render this design — no
+ * suggested replies, no date divider, no per-message avatar — and flattened every failure
+ * to "Something went wrong", so a visitor could not tell a misconfiguration from a dropped
+ * connection.
+ *
+ * Which page the visitor is on still decides where the funnel opens, but that is not this
+ * component's business any more: useHeadlessChat reads the page context itself when it
+ * starts a conversation. See pageContext.js.
  */
 export default function ChatWidget() {
   const [open, setOpen] = useState(false);
-  // Ads run per product line, so the page a visitor lands on already says which cover
-  // they came for, and the funnel opens on that rather than asking again. Which backend
-  // resolves it is chatBackend.js's business; on the orchestrator path this argument is
-  // unused, because that client reads the page context itself at `init`.
-  const { pathname, search } = useLocation();
-  const chat = useActiveChat(productForPage(pathname, search));
+  const chat = useHeadlessChat();
   const launcherRef = useRef(null);
 
   const openPanel = useCallback(() => {
@@ -50,10 +46,14 @@ export default function ChatWidget() {
     <>
       {open && <ChatPanel chat={chat} onClose={closePanel} />}
 
+      {/* `--open` is what hides this on a phone. The panel goes full-screen below 560px, and
+          the launcher is fixed to the same corner at the same z-index but painted after it,
+          so it sits on top of the send button. On desktop it stays put and becomes the
+          close control. */}
       <button
         ref={launcherRef}
         type="button"
-        className="imn-chat-launcher"
+        className={open ? 'imn-chat-launcher imn-chat-launcher--open' : 'imn-chat-launcher'}
         onClick={() => (open ? closePanel() : openPanel())}
         aria-label={open ? 'Close chat' : 'Chat with the InsureMyNation Assistant'}
         aria-expanded={open}

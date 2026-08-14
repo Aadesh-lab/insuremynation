@@ -4,15 +4,10 @@ import react from '@vitejs/plugin-react';
 export default defineConfig({
   plugins: [react()],
   server: {
+    // No proxy: the chat talks to orchestrator.imagine.bo cross-origin, and the Go service
+    // no longer has an API to forward to. Note that the assistant will not work on this
+    // port until imagine.bo allowlists http://localhost:5173 — everything else gets a
+    // 403 and the panel says the chat is unavailable.
     port: 5173,
-    // The chat widget calls {baseUrl}/v1/*, and baseUrl is the page's own origin.
-    // Proxying to the Go backend keeps it same-origin in dev too, so local work
-    // never depends on the deployed service or on CORS.
-    proxy: {
-      '/v1': {
-        target: 'http://localhost:8080',
-        changeOrigin: true,
-      },
-    },
   },
 });

@@ -37,6 +37,7 @@ func StartServer() {
 	}
 
 	r.Use(gin.Recovery())
+	r.Use(canonicalHost())
 	r.Use(middleware.CORS())
 	r.Use(middleware.IPLogging())
 	r.Use(middleware.RateLimiter(120, time.Minute))
@@ -58,6 +59,47 @@ func StartServer() {
 		logger.Log.Fatalf("server error: %v", err)
 	}
 }
+// canonicalHost sends page requests that arrive on any other hostname to CANONICAL_HOST.
+//
+// The service answers on both its Railway subdomain and the custom domain, and the two are
+// not interchangeable: the chat calls imagine.bo's orchestrator direct from the browser, and
+// that endpoint enforces a domain allowlist. Only the custom domain is on it, so the Railway
+// subdomain serves a page that looks fine and a chat that returns 403 — the worst kind of
+// broken, because nothing on the page says so. A visitor who lands there should end up
+// somewhere the assistant works.
+//
+// Unset, this does nothing: a bare `go run` and any preview deployment stay reachable on
+// whatever host they answer on.
+//
+// Two paths it must never touch. /api/ carries the healthcheck railway.toml points at, and
+// redirecting that would take the service down rather than fix a domain. /v1/ is the proxy
+// chat API, where a cross-host 3xx would be a confusing failure instead of an answer.
+func canonicalHost() gin.HandlerFunc {
+	want := strings.TrimSpace(os.Getenv("CANONICAL_HOST"))
+	if want == "" {
+		logger.Log.Printf("CANONICAL_HOST is unset — serving on any hostname without redirecting")
+		return func(c *gin.Context) { c.Next() }
+	}
+	logger.Log.Printf("redirecting page requests to %s", want)
+	return func(c *gin.Context) {
+		p := c.Request.URL.Path
+		if strings.HasPrefix(p, "/api/") || strings.HasPrefix(p, "/v1/") {
+			c.Next()
+			return
+		}
+		if h := c.Request.Host; h != "" && !strings.EqualFold(h, want) {
+			// Found, not Moved Permanently. A 301 is what canonicalisation normally wants,
+			// but browsers cache it indefinitely: get the host wrong once and visitors keep
+			// being sent to it long after the deploy is reverted. Promote this to 301 once
+			// the domain has settled.
+			c.Redirect(http.StatusFound, "https://"+want+c.Request.URL.RequestURI())
+			c.Abort()
+			return
+		}
+		c.Next()
+	}
+}
+
 func serveSPA(r *gin.Engine) {
 	dist := internal.Dist()
 	fileServer := http.FileServer(http.FS(dist))

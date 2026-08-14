@@ -1,14 +1,15 @@
 # InsureMyNation
 
-The InsureNation insurance site and its chat backend. Two directories, **one** deployable:
-the React site is built and embedded into the Go binary, which serves it alongside a secure
-proxy for the imagine.bo RAG chatbot.
+The InsureNation insurance site. Two directories, **one** deployable: the React site is
+built and embedded into the Go binary, which serves it. The chat assistant is imagine.bo's,
+called direct from the browser; the panel is ours.
 
-Live at https://insuremynation-production.up.railway.app
+Live at **https://insuremynation.imaginebo.app** — the canonical host, and the only one the
+chat works on. See *It only works on an allowlisted origin* below.
 
 ```
-frontend/   React site (Vite + React 18 + React Router 6 + Framer Motion)
-backend/    Go service — RAG proxy + static host for the built site
+frontend/   React site (Vite + React 18 + React Router 6 + Framer Motion) + the chat panel
+backend/    Go service — static host for the built site, plus a healthcheck
 Dockerfile  builds both, at the repo root because it needs both directories
 ```
 
@@ -23,9 +24,9 @@ cd frontend && npm install && npm run dev      # http://localhost:5173
 cd backend  && go run ./cmd/server             # http://localhost:8080
 ```
 
-Run both together for chat work: Vite proxies `/v1` to `localhost:8080`
-(`frontend/vite.config.js`), so the widget is same-origin in dev exactly as it is in
-production, and needs no rebuild between edits.
+The Go service is only needed to check the embedded build; `npm run dev` alone covers
+frontend work. Neither gives you a working chat locally — `localhost:5173` is not on
+imagine.bo's origin allowlist, so the panel reports the assistant as unavailable.
 
 | script (in `frontend/`) | what it does |
 | --- | --- |
@@ -34,6 +35,8 @@ production, and needs no rebuild between edits.
 | `npm run preview` | serve the production build |
 | `npm run images` | regenerate `public/assets/` from the handoff bundle |
 | `node scripts/export-kb.mjs` | regenerate the chatbot's knowledge-base corpus |
+| `node scripts/check-split-options.mjs` | chat: the reply-to-chips parser |
+| `node scripts/check-page-context.mjs` | chat: first-seen ad attribution |
 
 In `backend/`: `go build ./...`, `go vet ./...`, `go test ./...`.
 
@@ -119,27 +122,79 @@ The insurance pages add scroll-triggered motion via Framer Motion
 scale and colour the design specifies, so the page at rest is unchanged.
 `prefers-reduced-motion` collapses all of it.
 
-# The chat backend
+# The chat
 
-One binary that serves the whole site: the built React app is embedded via
-`//go:embed` (see `backend/internal/fs.go`) and served alongside a secure proxy in front of
-the imagine.bo RAG API. The proxy exists for one reason: the RAG API key must never
-reach the browser.
+The assistant is imagine.bo's. The **UI** is ours, in
+`frontend/src/components/chat/`; it talks to `orchestrator.imagine.bo` direct from the
+browser against the contract in [HEADLESS_CHAT_INTEGRATION_v2.md](HEADLESS_CHAT_INTEGRATION_v2.md).
+They own the funnel questions, the system prompt and the lead capture — their assistant
+asks the visitor for name, mobile and email itself and writes the lead to their CRM.
 
-Because the site and the API share an origin, the widget's `baseUrl` is just
-`window.location.origin` — no CORS preflight, and no deploy-time URL to keep in
-sync. `frontend/index.html` therefore configures the widget with no `apiKey` and no
-`kbId`; both stay server-side.
+There is no chat API on this service. There used to be: a proxy at `/v1/*` holding a RAG
+API key, with our own qualification funnel and per-product prompts. The headless
+integration carries **no key**, so the one reason that backend existed no longer applied
+and it was deleted. `git log` has it.
+
+| file | job |
+| --- | --- |
+| `useHeadlessChat.js` | the client: sessions, one turn at a time, errors, terminal state |
+| `pageContext.js` | `context_variables` — which page, and first-seen ad attribution |
+| `splitOptions.js` | the `- ` lines of a reply become tappable chips |
+| `ChatPanel.jsx`, `Message.jsx`, `ChatWidget.jsx` | the panel, bubbles and launcher |
+
+Two checks cover the parts that fail *silently* — a broken parser just stops rendering
+chips, broken attribution just reports nothing:
+
+```bash
+cd frontend
+node scripts/check-split-options.mjs
+node scripts/check-page-context.mjs
+```
+
+### It only works on an allowlisted origin
+
+imagine.bo keeps a list of domains, and every other origin gets
+`403 {"detail":"Domain not allowed: …"}`. The panel reports that as "Chat is unavailable on
+this page. Please call +91 99101 69789." — correct behaviour, but it means the assistant is
+dead anywhere unlisted, with the page otherwise looking fine.
+
+| origin | on the list |
+| --- | --- |
+| `https://insuremynation.imaginebo.app` | yes — the canonical host |
+| `https://insuremynation-production.up.railway.app` | no |
+| `http://localhost:5173` | no — so the chat cannot be exercised locally |
+
+Ask them before relying on a new host. Point ads at the canonical domain only.
+
+### Mobile
+
+Below 560px the panel becomes a full-screen sheet (`chat.css`). Four of those rules exist
+for reasons a desktop browser will not show you:
+
+- the height is set from `window.visualViewport` in JS, because `inset: 0` is the layout
+  viewport and an on-screen keyboard does not shrink it — the composer would end up
+  *under* the keyboard. `100dvh` tracks browser chrome, not keyboards.
+- the composer is 16px, below which iOS Safari zooms the page on focus and the visitor
+  cannot zoom back out.
+- the launcher is hidden while the panel is open, or it covers the send button.
+- the composer is not auto-focused on touch, or the keyboard hides the question.
+
+# The service
+
+One binary: the built React app is embedded via `//go:embed`
+(`backend/internal/fs.go`) and served as a SPA, plus `GET /api/health` for the Railway
+healthcheck. Nothing else.
 
 ### Build and deploy
 
-The `Dockerfile` and `railway.toml` live at the **repository root**, not in `backend/`, because the build has to reach both `frontend/` and `backend/`. On Railway leave the
+The `Dockerfile` and `railway.toml` live at the **repository root**, not in `backend/`,
+because the build has to reach both `frontend/` and `backend/`. On Railway leave the
 service's Root Directory empty so the build context is the repo root.
 
 The image builds the site (`node:22-alpine`, `npm ci && npm run build`), overlays the
-output onto `backend/internal/dist`, then compiles the Go binary with it embedded.
-Only a placeholder `backend/internal/dist/index.html` is committed — enough for
-`//go:embed` to compile from a clean checkout.
+output onto `backend/internal/dist`, then compiles the Go binary with it embedded. Only a
+placeholder `backend/internal/dist/index.html` is committed — enough for `//go:embed` to
+compile from a clean checkout.
 
 To reproduce locally:
 
@@ -149,50 +204,26 @@ cd ../backend && rm -rf internal/dist && cp -r ../frontend/dist internal/dist
 go build -o bin/imagine_backend ./cmd/server && ./bin/imagine_backend
 ```
 
-For day-to-day frontend work use `npm run dev` instead: Vite proxies `/v1` to
-`localhost:8080` (see `frontend/vite.config.js`), so run the Go binary alongside it
-and the widget works same-origin without rebuilding.
-
-The only client is the site's own chat UI, in
-`frontend/src/components/chat/`. It calls this service on the page's own origin and
-sends no credentials of its own — the API key is added here, server-side.
-
-The `/v1` route shapes below mirror the upstream RAG API's paths. That started as a
-constraint (an earlier version used imagine.bo's hosted widget script, which built
-every URL from a configured `baseUrl` and so could not be pointed at paths of our
-own naming) and has been kept since: it keeps this service a thin, recognisable
-shim over the upstream rather than a second API to learn.
-
-| route | purpose |
-| --- | --- |
-| `GET /*` | the embedded React site, with SPA fallback for client-side routes |
-| `GET /api/health` | Railway healthcheck |
-| `GET /v1/kb` | KB auto-discovery — narrowed to the one KB in `RAG_KB_ID` |
-| `GET /v1/sessions` | only the sessions this client minted |
-| `POST /v1/sessions` | mint a session, bound to this client |
-| `GET /v1/sessions/:id` | one session, only for the client that minted it |
-| `POST /v1/query` | ask a question; streams when the body sets `stream: true` |
+For day-to-day frontend work use `npm run dev`. No proxy is needed any more — the chat is
+cross-origin by design — but see the allowlist note above: on `localhost:5173` the panel
+will report the chat as unavailable.
 
 ### Environment
 
-Set these on the service (Railway → Variables). Both of the first two are
-required: until they are present every chat request returns
-`503 {"error":"chatbot not configured"}` — the server still boots and still
-serves `/api/health`, so a missing key is visible without taking the site down.
-
 | var | required | notes |
 | --- | --- | --- |
-| `RAG_API_KEY` | yes | bearer token, `rg-<hex>`. Never logged, never returned. |
-| `RAG_KB_ID` | yes | UUID of the knowledge base to answer from |
-| `RAG_BASE_URL` | no | defaults to `https://app.imagine.bo` |
+| `CANONICAL_HOST` | recommended | hostname to redirect page requests to, e.g. `insuremynation.imaginebo.app`. Unset, the service answers on any host — and the chat only works on one. `/api/` and `/v1/` are never redirected. |
 | `PORT` | no | defaults to `8080` (Railway sets it) |
 | `ENV` | no | `production` switches gin to release mode |
 | `CLIENT_IP_HEADER` | behind a proxy | header naming the real client. **On Railway set `X-Real-Ip`.** |
 
-`CLIENT_IP_HEADER` is not optional in practice, because the abuse cap is keyed on the
-client's identity — and the value must be a header the edge **overwrites**, not merely
-one that sounds infrastructural. Naming a header the edge does not set is worse than
-leaving this blank: every caller can then supply it and impersonate any client.
+The `RAG_*` variables are dead — nothing reads them since the proxy was deleted. Remove
+them from the Railway service.
+
+`CLIENT_IP_HEADER` still feeds the global rate limiter, and the value must be a header the
+edge **overwrites**, not merely one that sounds infrastructural. Naming a header the edge
+does not set is worse than leaving this blank: every caller can then supply it and
+impersonate any client.
 
 Measured against this Railway deployment:
 
@@ -202,97 +233,27 @@ Measured against this Railway deployment:
 | `X-Forwarded-For` | yes, real client **first**, edge appended | left entry is caller-controlled |
 | `X-Envoy-External-Address` | **no** | accepted verbatim — unsafe despite the name |
 
-Re-run that check on any new platform (send the header a value, see whether it
-survives) rather than trusting a name. Unset, the identity falls back to the socket
-peer: unforgeable, but on Railway that is a rotating `100.64.0.0/10` internal pool, so
-the cap keys on neither the visitor nor a constant. gin's default of trusting
-`X-Forwarded-For` from any peer is disabled in `server.go` for the same reason —
-verified before the fix that 12 forged requests bought 12 fresh quotas.
+Re-run that check on any new platform (send the header a value, see whether it survives)
+rather than trusting a name. gin's default of trusting `X-Forwarded-For` from any peer is
+disabled in `server.go`: before that fix, 12 forged requests bought 12 fresh quotas.
 
-They are read with `os.Getenv` at request time, not cached at boot, so setting a
-missing var and restarting is enough — there is no `.env` loading and no config
-struct to extend.
-
-Local run:
+Variables are read with `os.Getenv`, so setting a missing one and restarting is enough —
+there is no `.env` loading and no config struct to extend.
 
 ```bash
-RAG_API_KEY=rg-... RAG_KB_ID=<uuid> ENV=development go run ./cmd/server
+CANONICAL_HOST= ENV=development go run ./cmd/server
 go test ./...
 ```
 
-### Provisioned resources
+### The knowledge base
 
-The imagine.bo tenant, API key and knowledge base for this site already exist:
-
-| what | value |
-| --- | --- |
-| tenant | `646bb03e-7541-4a42-92cc-1c7969f73f9f` ("InsureMyNation") |
-| `RAG_KB_ID` | `7515c00b-2b43-42b8-b075-92dc1c16a86e` |
-| `RAG_API_KEY` | label `insuremynation-site` — the value is shown only at creation; it is in `backend/.env` locally (gitignored) and must be set in Railway by hand |
-
-The KB holds one file, `insuremynation-website.txt`, generated from the site's own
-copy by `frontend/scripts/export-kb.mjs`. Re-run that script after any copy change
-and re-ingest, so the assistant cannot drift from what the site says:
+`frontend/kb-corpus.txt` is generated from the site's own copy by
+`frontend/scripts/export-kb.mjs`, so the assistant cannot drift from what the site says.
+Re-run it after any copy change:
 
 ```bash
-cd frontend && node scripts/export-kb.mjs      # writes kb-corpus.txt
-# then POST it to https://app.imagine.bo/v1/ingest/text with options.kb_id above
+cd frontend && node scripts/export-kb.mjs
 ```
 
-**The chatbot needs a plan that includes RAG conversations.** Free and Lite grant
-zero, Build 2000, Pro 3500. On a zero-quota plan the upstream answers `/v1/query`
-with 402 and this service correctly reports
-`429 {"error":"The assistant is busy right now. Please try again later."}` — the
-integration is fine, the plan is the blocker.
-
-### What the proxy changes on the way through
-
-Not a transparent pass-through in either direction, deliberately:
-
-- **Request:** the upstream body is rebuilt field by field. `kb_id`,
-  `system_prompt`, `top_k` and `temperature` come from this process, so nothing
-  typed into the browser console can retarget the query at another knowledge base
-  or unpick the grounding instructions. `message` is capped at 2000 characters and
-  history at the last 10 valid turns, because both are billed per token.
-- **Response:** `chunk_text` and `file_id` are stripped from every source, on the
-  streaming path as well as the plain one — raw document text does not belong in a
-  public page. Upstream error bodies are never forwarded; they name internal
-  services.
-- **Scope:** the upstream's `/v1/kb` and `/v1/sessions` are *tenant*-scoped. Served
-  verbatim to an unauthenticated widget they would publish every KB under the
-  account and every other visitor's sessions, so both are narrowed here — see
-  `internal/services/sessions.go`.
-
-### Abuse cap
-
-All browser traffic reaches the upstream from this one server's IP and the upstream
-bills per message, so `backend/internal/services/chat.go` caps each client IP and returns
-`429 {"error":"Too many messages. Please try again in a few minutes."}` past it.
-
-Two windows, because the two abuse shapes differ. A real conversation is a burst
-over a few minutes; a script drains steadily for hours. One window cannot bound
-both:
-
-| allowance | limit | bounds |
-| --- | --- | --- |
-| messages, burst | 30 / 10 min | one visitor hammering the box |
-| messages, daily | 150 / 24 h | sustained draining across rolled-over bursts |
-| session mints | 20 / 10 min | page-reload churn |
-
-The first version used 10 per 10 minutes, which a five-turn conversation half spent
-— and because the widget never reads error bodies, the visitor just sees
-"Something went wrong. Please try again." Keep that in mind before tightening
-these: a cap that catches real use is indistinguishable from a broken chatbot.
-The template's global rate limiter is generic request shaping and has no notion of
-what a request costs; it is not a substitute.
-
-Session minting has its own, looser allowance (20 per 10 minutes) rather than sharing
-the message quota. It is deliberately generous: the widget mints a session on every
-fresh page load, and when a mint is refused it reports "Could not start a session" and
-leaves its input **disabled** — so too tight a cap presents to a visitor as a chat box
-they cannot type in.
-
-Client identity is the IP, which means visitors behind one NAT share a quota and
-a view of each other's sessions. That is the documented ceiling — see the
-`ponytail:` comments — and the upgrade path is a signed cookie plus a shared store
-if the service is ever replicated.
+Ingesting it is now imagine.bo's side of the line — ask them to re-ingest, and to confirm
+which knowledge base their orchestrator actually answers from.
