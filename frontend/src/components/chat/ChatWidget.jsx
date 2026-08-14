@@ -44,7 +44,26 @@ export default function ChatWidget() {
 
   return (
     <>
-      {open && <ChatPanel chat={chat} onClose={closePanel} />}
+      {open && (
+        <>
+          {/* Visible only on a phone, where the panel is a sheet over the page: it dims what
+              is behind and gives the visitor somewhere to tap to dismiss. `display` is left
+              to chat.css so the media query decides — setting it inline would beat the
+              stylesheet and put a dimmer over the desktop page too. */}
+          <div
+            className="imn-chat-backdrop"
+            onClick={closePanel}
+            aria-hidden="true"
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 2147482999,
+              background: 'rgba(0,13,40,0.45)',
+            }}
+          />
+          <ChatPanel chat={chat} onClose={closePanel} />
+        </>
+      )}
 
       {/* `--open` is what hides this on a phone. The panel goes full-screen below 560px, and
           the launcher is fixed to the same corner at the same z-index but painted after it,

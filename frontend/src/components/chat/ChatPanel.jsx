@@ -10,28 +10,51 @@ export default function ChatPanel({ chat, onClose }) {
   const panelRef = useRef(null);
 
   /**
-   * Keeps the panel inside the *visual* viewport on a phone.
+   * Sizes and positions the bottom sheet on a phone, against the *visual* viewport.
    *
-   * Full-screen below 560px (see chat.css) means `inset: 0`, which is the layout viewport —
-   * and the on-screen keyboard does not shrink that. So the composer ends up underneath the
-   * keyboard exactly when the visitor wants to type in it. `dvh` does not help either: it
-   * tracks browser chrome, not keyboards.
+   * Below 560px the panel is a sheet anchored to the bottom (see chat.css), deliberately
+   * short of full height so the page stays visible above it and the chat reads as an overlay
+   * on the site rather than a separate app.
    *
-   * visualViewport is the only thing that reports the real figure. Nothing is set on
-   * desktop, where the panel is a fixed-size card and the inline styles already fit.
+   * Two things CSS cannot do here. `bottom: 0` is the *layout* viewport, which an on-screen
+   * keyboard does not shrink — so the sheet, and the composer with it, would sit underneath
+   * the keyboard exactly when it is being typed into; `dvh` does not help, it tracks browser
+   * chrome, not keyboards. And the sheet has to give up its margin when the keyboard takes
+   * the space it was leaving to the page.
+   *
+   * A real keyboard cannot be emulated headlessly, so `scratchpad/mobile.mjs` exercises the
+   * resize path by shrinking the whole viewport, which is a smaller phone rather than a
+   * keyboard. The keyboard branch itself is reasoned, not measured.
+   *
+   * Nothing is set on desktop, where the panel is a fixed card and the inline styles fit.
    */
   useEffect(() => {
     const vv = window.visualViewport;
     if (!vv) return undefined;
+
+    const SHEET = 0.85; // of the viewport, with the keyboard down
+
     const apply = () => {
       const el = panelRef.current;
       if (!el) return;
       if (window.innerWidth > 560) {
         el.style.removeProperty('height');
+        el.style.removeProperty('bottom');
         return;
       }
-      el.style.height = `${vv.height}px`;
+      const h = vv.height;
+      // A keyboard shrinks the visual viewport and leaves the layout viewport alone, so the
+      // gap between the two is the signal — no need to remember a previous height, which
+      // would be wrong for anyone who opens the chat with the keyboard already up. Once the
+      // keyboard is there is no room to spare, so the sheet takes what is left rather than
+      // keep showing page behind it.
+      const keyboardUp = h < window.innerHeight * 0.8;
+      el.style.height = `${Math.round(keyboardUp ? h : h * SHEET)}px`;
+      // How far the visual viewport's bottom sits above the layout viewport's — zero until a
+      // keyboard or a browser toolbar takes space.
+      el.style.bottom = `${Math.max(0, Math.round(window.innerHeight - h - vv.offsetTop))}px`;
     };
+
     apply();
     vv.addEventListener('resize', apply);
     vv.addEventListener('scroll', apply);
@@ -479,7 +502,9 @@ function Composer({ draft, setDraft, pending, inputRef, onSubmit }) {
       >
         <svg width="17" height="17" viewBox="0 0 24 24" fill="none" aria-hidden="true">
           <path
-            d="M4 12l16-8-6 8 6 8-16-8Z"
+            // Apex on the right, wing tips on the left. The previous path had it the other
+            // way round, which drew the plane pointing back at the transcript.
+            d="M20 12 4 4l6 8-6 8 16-8Z"
             stroke="#fff"
             strokeWidth="1.8"
             strokeLinecap="round"
