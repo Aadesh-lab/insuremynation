@@ -113,21 +113,28 @@ reshapes it through `[data-r="..."]` media queries. That structure is kept intac
 It exists for exactly one reason: **the RAG API key must never reach the browser.** Two
 things follow that are easy to break.
 
-**The routes are not ours to name.** The only client is the imagine.bo chat widget, loaded
-from `public.assets.imagine.bo` in `frontend/index.html`. It builds every URL from its
-`baseUrl`, so the service mirrors the upstream's own paths — `/v1/kb`, `/v1/sessions`,
-`/v1/sessions/:id`, `/v1/query`. Before changing a response shape, check the widget parses
-it: it reads `kb_id` and `session_id` (never `id`), needs an *object* with `messages` from
+**The routes are not ours to name.** The client is our own React panel in
+`frontend/src/components/chat/`, but the paths are still the upstream's — `/v1/kb`,
+`/v1/sessions`, `/v1/sessions/:id`, `/v1/query` — because the service was built against the
+hosted imagine.bo widget and mirroring them costs nothing. Two shapes are load-bearing
+regardless of client: `session_id` (never `id`), and an *object* with `messages` from
 `/v1/sessions/:id` (the upstream serves that transcript from a *different* path,
-`/history`), and reads only `text` and `done` from SSE frames. It checks `res.ok` and never
-reads error bodies, so a mis-shaped 200 fails silently and a 429 shows up to the user as
-"Something went wrong."
+`/history`). Unlike the hosted widget, our panel *does* read error bodies, so the backend's
+wording for a rate limit or an outage reaches the visitor instead of "Something went wrong."
 
 **It is not a transparent proxy, in either direction.** `kb_id`, `system_prompt`, `top_k`
 and `temperature` are set server-side so a visitor cannot retarget a query;
 `chunk_text`/`file_id` are stripped from sources on both the plain and streaming paths; and
 the upstream's tenant-scoped `/v1/kb` and `/v1/sessions` are narrowed to one KB and to the
 caller's own sessions. Remove any of those and a leak turns back on.
+
+That includes the per-page behaviour. The browser sends `product` — an **id**, never prompt
+text — and `buildSystemPrompt` looks it up in `productPrompts`; an unrecognised value gets
+the base prompt. **The map lookup is the allowlist.** Concatenate anything from the request
+into `system_prompt` and every visitor can rewrite the assistant. `chat_test.go` covers it.
+The funnels those prompts drive, and the flow end to end, are in
+[user_flow_insurance.md](user_flow_insurance.md) — read that before changing the questions,
+their order, or the chip wording in `frontend/src/components/chat/journeys.js`.
 
 Other load-bearing details:
 
@@ -144,7 +151,14 @@ Other load-bearing details:
 - The knowledge base is generated from the site's own copy by
   `frontend/scripts/export-kb.mjs`. Re-run it and re-ingest after copy edits. The
   assistant's *identity* deliberately lives in the system prompt, not the corpus, because
-  retrieval is semantic and a question like "what are you" does not reliably retrieve.
+  retrieval is semantic and a question like "what are you" does not reliably retrieve. The
+  same goes for the qualification funnels: none of what they ask about — family floaters,
+  lakh/crore, NCB, Institute Cargo Clauses — is in the corpus, which is why the chips send
+  *answers* rather than questions.
+- There is **no lead capture**. That is why the prompt forbids asking a visitor for their
+  name, phone or email: a number typed into the chat is read by nobody, so asking for one
+  promises a call back that will not happen. Lift that ban only together with the endpoint
+  that catches the answer — specified in [user_flow_insurance.md](user_flow_insurance.md).
 
 ## Known content bug
 

@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { BLUE, DEEP } from '../../data/site';
+import { productForPage } from './journeys';
 import { useChat } from './useChat';
 import ChatPanel from './ChatPanel';
 import './chat.css';
@@ -15,7 +17,10 @@ import './chat.css';
  */
 export default function ChatWidget() {
   const [open, setOpen] = useState(false);
-  const chat = useChat();
+  // Ads run per product line, so the page a visitor lands on already says which cover
+  // they came for. It opens that product's funnel instead of asking again.
+  const { pathname, search } = useLocation();
+  const chat = useChat(productForPage(pathname, search));
   const launcherRef = useRef(null);
 
   const openPanel = useCallback(() => {

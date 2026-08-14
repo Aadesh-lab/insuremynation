@@ -1,36 +1,25 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { BLUE, DEEP, EMAIL, PHONE } from '../../data/site';
+import { journeyFor } from './journeys';
 import Message from './Message';
 
-/**
- * Opening prompts. `label` is what the visitor taps; `message` is what gets sent.
- *
- * The two are separate on purpose. A bare "Health" is a poor retrieval query — the
- * same short-vague-question problem that made "what are you" fail before identity
- * moved into the system prompt — and it reads oddly in the transcript. The full
- * question retrieves the right section and leaves a log someone can follow.
- *
- * These lead with the six product lines rather than with claims and logistics,
- * because the first thing worth learning from a new visitor is which cover they are
- * shopping for. Every one lands on a well-stocked section of the corpus.
- */
-const SUGGESTIONS = [
-  { label: 'Health', message: 'What does your health insurance cover?' },
-  { label: 'Life', message: 'What does your life insurance cover?' },
-  { label: 'Car', message: 'What does your car insurance cover?' },
-  { label: 'Bike', message: 'What does your bike insurance cover?' },
-  { label: 'Travel', message: 'What does your travel insurance cover?' },
-  { label: 'Marine', message: 'What does your marine insurance cover?' },
-  { label: 'Something else', message: 'What else can you help me with?' },
-];
-
-const GREETING = 'Hi! Which cover are you looking for?';
-
 export default function ChatPanel({ chat, onClose }) {
-  const { messages, pending, error, send, clearError, reset } = chat;
+  const { messages, pending, error, send, clearError, reset, product } = chat;
   const [draft, setDraft] = useState('');
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
+
+  // The funnel for this page — its opening question, and a row of tappable answers per
+  // step. See journeys.js for why the chips send answers rather than questions.
+  const journey = journeyFor(product);
+
+  // ponytail: the step is the count of visitor messages. That stays aligned with what
+  // the assistant just asked only because the per-product system prompt pins the
+  // question order. Someone who types a freeform answer instead of tapping still
+  // advances it and sees the next step's chips — redundant at worst, never broken. If
+  // it ever drifts, have the model name the step it is on and key off that instead.
+  const step = messages.filter((m) => m.role === 'user').length;
+  const chips = journey.steps[step]?.chips ?? null;
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -43,11 +32,11 @@ export default function ChatPanel({ chat, onClose }) {
     if (el) el.scrollTop = el.scrollHeight;
   }, [messages, pending, error]);
 
-  const submit = (text) => {
+  const submit = (text, productOverride) => {
     const value = (text ?? draft).trim();
     if (!value || pending) return;
     setDraft('');
-    send(value);
+    send(value, productOverride);
   };
 
   return (
@@ -97,7 +86,7 @@ export default function ChatPanel({ chat, onClose }) {
       >
         <DayDivider />
 
-        <Message role="assistant" text={GREETING} />
+        <Message role="assistant" text={journey.greeting} />
         {messages.map((m) => (
           <Message key={m.id} role={m.role} text={m.text} streaming={m.streaming} />
         ))}
@@ -105,9 +94,11 @@ export default function ChatPanel({ chat, onClose }) {
         {error && <ErrorNotice error={error} onRetry={() => { clearError(); submit(error.retry); }} />}
       </div>
 
-      {/* Suggestions are only an opener: once there is a conversation they would
-          compete with it for space, and the visitor has clearly found their words. */}
-      {messages.length === 0 && !error && (
+      {/* The row disappears once the funnel runs out of steps: past that point the
+          assistant is summarising and handing over, and the visitor has found their
+          words. It is also hidden while an error is showing, so the retry link is the
+          only thing to click. */}
+      {chips && !error && (
         <div
           style={{
             display: 'flex',
@@ -116,13 +107,13 @@ export default function ChatPanel({ chat, onClose }) {
             padding: '4px 16px 12px',
           }}
         >
-          {SUGGESTIONS.map((s) => (
+          {chips.map((s) => (
             <button
               key={s.label}
               type="button"
               className="imn-chat-chip"
               disabled={pending}
-              onClick={() => submit(s.message)}
+              onClick={() => submit(s.message, s.product)}
               // Without this a screen reader announces only "Health", which says
               // nothing about what tapping it does.
               aria-label={s.message}

@@ -135,13 +135,20 @@ async function readSSE(res, onText, signal) {
 let nextId = 0;
 const makeId = () => `m${nextId++}`;
 
-export function useChat() {
+/**
+ * @param pageProduct the product id this page is about, or null. It becomes the
+ *   conversation's product on the first message and is then frozen: a visitor three
+ *   questions into the health funnel who wanders onto /car-insurance should not have the
+ *   assistant switch rails mid-flow. `reset()` unfreezes it.
+ */
+export function useChat(pageProduct) {
   const [messages, setMessages] = useState([]);
   const [pending, setPending] = useState(false);
   const [error, setError] = useState(null);
   const sessionRef = useRef(loadSessionId());
   const abortRef = useRef(null);
   const restoredRef = useRef(false);
+  const [product, setProduct] = useState(null);
 
   // Abort any stream still running when the component goes away, so a closed tab
   // does not leave the backend generating into nothing.
@@ -203,9 +210,15 @@ export function useChat() {
   }, []);
 
   const send = useCallback(
-    async (raw) => {
+    async (raw, productOverride) => {
       const text = raw.trim();
       if (!text || pending) return;
+
+      // Locked on the first message. `productOverride` is how a chip on a non-product
+      // page declares one — tapping "Health" on the landing page enters the health
+      // funnel without a navigation.
+      const locked = product ?? productOverride ?? pageProduct ?? null;
+      if (locked !== product) setProduct(locked);
 
       setError(null);
       const userMsg = { id: makeId(), role: 'user', text };
@@ -236,6 +249,10 @@ export function useChat() {
             history,
             session_id: sessionRef.current || '',
             stream: true,
+            // An id, not prompt text. The backend looks it up in an allowlist and
+            // ignores anything it does not recognise, so this cannot retarget the
+            // assistant — see productPrompts in backend/internal/services/chat.go.
+            product: locked || '',
           }),
           signal: controller.signal,
         });
@@ -274,7 +291,7 @@ export function useChat() {
         abortRef.current = null;
       }
     },
-    [messages, pending]
+    [messages, pending, product, pageProduct]
   );
 
   /**
@@ -290,11 +307,22 @@ export function useChat() {
     setMessages([]);
     setError(null);
     setPending(false);
+    setProduct(null);
     sessionRef.current = null;
     saveSessionId(null);
     restoredRef.current = false;
     await init();
   }, [init]);
 
-  return { messages, pending, error, send, init, reset, clearError: () => setError(null) };
+  return {
+    messages,
+    pending,
+    error,
+    send,
+    init,
+    reset,
+    clearError: () => setError(null),
+    // Frozen once the conversation starts, the current page's product until then.
+    product: product ?? pageProduct ?? null,
+  };
 }

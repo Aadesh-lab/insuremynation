@@ -10,6 +10,10 @@ type QueryRequest struct {
 	History   []ChatMessage `json:"history"`
 	SessionID string        `json:"session_id"`
 	Stream    bool          `json:"stream"`
+	// Product is which insurance page the visitor is on: an id only, never prompt
+	// text. It is used solely as a key into productPrompts, so an unrecognised value
+	// is ignored rather than trusted. See services.buildSystemPrompt.
+	Product string `json:"product"`
 }
 
 type Source struct {
