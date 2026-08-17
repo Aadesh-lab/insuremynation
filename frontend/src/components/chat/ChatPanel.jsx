@@ -3,6 +3,7 @@ import { BLUE, DEEP, EMAIL, PHONE } from '../../data/site';
 import { isContactAsk } from './contactAsk';
 import ContactForm from './ContactForm';
 import Message from './Message';
+import RobotGlyph from './RobotGlyph';
 
 export default function ChatPanel({ chat, onClose }) {
   const { messages, pending, error, send, clearError, reset, chips, finished } = chat;
@@ -177,46 +178,12 @@ export default function ChatPanel({ chat, onClose }) {
       {/* Hidden when the assistant has not offered a choice, and while an error is
           showing so the retry link is the only thing to click. Never the *only* way to
           answer: the composer stays available so a visitor can type "we are four in
-          Gurgaon" instead of picking from the list. */}
-      {chips && !error && (
-        <div
-          className="imn-chat-chips"
-          style={{
-            display: 'flex',
-            flexWrap: 'wrap',
-            gap: 8,
-            padding: '4px 16px 12px',
-          }}
-        >
-          {chips.map((label) => (
-            <button
-              key={label}
-              type="button"
-              className="imn-chat-chip"
-              disabled={pending}
-              // The label *is* the message — no aria-label, because it would only repeat
-              // the visible text.
-              onClick={() => submit(label)}
-              style={{
-                appearance: 'none',
-                background: '#fff',
-                border: '1.5px solid rgba(0,74,173,0.22)',
-                borderRadius: 10,
-                padding: '8px 12px',
-                fontFamily: 'inherit',
-                fontWeight: 400,
-                fontSize: 13,
-                lineHeight: 1.2,
-                color: BLUE,
-                cursor: 'pointer',
-                textAlign: 'left',
-              }}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
-      )}
+          Gurgaon" instead of picking from the list.
+          Two presentations, picked by how much space the options need: a short set stays
+          wrapped pills; a long set becomes one bordered group of radio-style rows, compact
+          enough that every option is visible without scrolling. The circle is decoration —
+          a tap still submits the label as a message, so no second confirm. */}
+      {chips && !error && <ChipRow chips={chips} pending={pending} onPick={submit} />}
 
       {finished ? (
         <FinishedNotice onReset={reset} />
@@ -229,6 +196,108 @@ export default function ChatPanel({ chat, onClose }) {
           onSubmit={() => submit()}
         />
       )}
+    </div>
+  );
+}
+
+/**
+ * The options under a question. Pills while the set is small; a radio-style list once it
+ * is not. The threshold is space, not count: three short answers ("Yes / No / Not sure")
+ * sit in one pill row, but three long ones already wrap to three, at which point rows
+ * with a separator read better and pack tighter.
+ */
+function ChipRow({ chips, pending, onPick }) {
+  const asList = chips.length > 3 || chips.some((label) => label.length > 28);
+
+  if (!asList) {
+    return (
+      <div
+        className="imn-chat-chips"
+        style={{ display: 'flex', flexWrap: 'wrap', gap: 8, padding: '4px 16px 12px', flexShrink: 0 }}
+      >
+        {chips.map((label) => (
+          <button
+            key={label}
+            type="button"
+            className="imn-chat-chip"
+            disabled={pending}
+            // The label *is* the message — no aria-label, because it would only repeat
+            // the visible text.
+            onClick={() => onPick(label)}
+            style={{
+              appearance: 'none',
+              background: '#fff',
+              border: '1.5px solid rgba(0,74,173,0.22)',
+              borderRadius: 10,
+              padding: '7px 12px',
+              fontFamily: 'inherit',
+              fontWeight: 400,
+              fontSize: 11,
+              lineHeight: 1.2,
+              color: BLUE,
+              cursor: 'pointer',
+              textAlign: 'left',
+            }}
+          >
+            {label}
+          </button>
+        ))}
+      </div>
+    );
+  }
+
+  return (
+    <div
+      className="imn-chat-chips"
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        margin: '4px 16px 12px',
+        border: '1.5px solid rgba(0,74,173,0.22)',
+        borderRadius: 12,
+        overflow: 'hidden',
+        flexShrink: 0,
+      }}
+    >
+      {chips.map((label, i) => (
+        <button
+          key={label}
+          type="button"
+          className="imn-chat-chip"
+          disabled={pending}
+          onClick={() => onPick(label)}
+          style={{
+            appearance: 'none',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 8,
+            width: '100%',
+            background: '#fff',
+            border: 0,
+            borderTop: i > 0 ? '1px solid rgba(0,74,173,0.12)' : 0,
+            padding: '7px 12px',
+            fontFamily: 'inherit',
+            fontWeight: 400,
+            fontSize: 11,
+            lineHeight: 1.2,
+            color: BLUE,
+            cursor: 'pointer',
+            textAlign: 'left',
+          }}
+        >
+          <span
+            aria-hidden="true"
+            style={{
+              width: 12,
+              height: 12,
+              borderRadius: '50%',
+              border: '1.5px solid rgba(0,74,173,0.45)',
+              flexShrink: 0,
+            }}
+          />
+          {label}
+        </button>
+      ))}
     </div>
   );
 }
@@ -251,30 +320,19 @@ function Header({ onClose, onReset }) {
           width: 34,
           height: 34,
           borderRadius: 9,
-          background: '#fff',
+          background: BLUE,
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
           flexShrink: 0,
         }}
       >
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
-          <path
-            d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5Z"
-            stroke={BLUE}
-            strokeWidth="1.8"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
+        <RobotGlyph size={20} fill="#fff" />
       </div>
 
       <div style={{ minWidth: 0, flex: 1 }}>
         <div style={{ fontWeight: 500, fontSize: 15, color: '#fff', lineHeight: 1.2 }}>
           InsureMyNation Assistant
-        </div>
-        <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.75)', lineHeight: 1.3 }}>
-          Answers from our website
         </div>
       </div>
 
