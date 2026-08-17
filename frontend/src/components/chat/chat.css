@@ -137,9 +137,13 @@
      is only the pre-JS fallback. */
   .imn-chat-panel {
     position: fixed !important;
-    inset: auto 0 0 0 !important;
+    top: auto !important;
+    left: 0 !important;
+    right: 0 !important;
+    /* Set from JS off visualViewport; the literals are the pre-JS fallback. */
+    bottom: var(--imn-sheet-bottom, 0) !important;
+    height: var(--imn-sheet-h, 85svh) !important;
     width: 100% !important;
-    height: 85svh !important;
     max-width: none !important;
     max-height: none !important;
     border-radius: 16px 16px 0 0 !important;

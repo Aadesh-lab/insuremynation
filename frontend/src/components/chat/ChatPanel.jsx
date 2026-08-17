@@ -37,11 +37,6 @@ export default function ChatPanel({ chat, onClose }) {
     const apply = () => {
       const el = panelRef.current;
       if (!el) return;
-      if (window.innerWidth > 560) {
-        el.style.removeProperty('height');
-        el.style.removeProperty('bottom');
-        return;
-      }
       const h = vv.height;
       // A keyboard shrinks the visual viewport and leaves the layout viewport alone, so the
       // gap between the two is the signal — no need to remember a previous height, which
@@ -49,10 +44,18 @@ export default function ChatPanel({ chat, onClose }) {
       // keyboard is there is no room to spare, so the sheet takes what is left rather than
       // keep showing page behind it.
       const keyboardUp = h < window.innerHeight * 0.8;
-      el.style.height = `${Math.round(keyboardUp ? h : h * SHEET)}px`;
+      // Custom properties, not `style.height` / `style.bottom`. Those two are set inline by
+      // the component to the design's desktop card, and writing them here — or removing them
+      // again above 560px — destroys that card, which is how the desktop panel ended up with
+      // no anchor and off-screen. chat.css consumes these only inside the phone breakpoint,
+      // so on desktop they sit unused.
+      el.style.setProperty('--imn-sheet-h', `${Math.round(keyboardUp ? h : h * SHEET)}px`);
       // How far the visual viewport's bottom sits above the layout viewport's — zero until a
       // keyboard or a browser toolbar takes space.
-      el.style.bottom = `${Math.max(0, Math.round(window.innerHeight - h - vv.offsetTop))}px`;
+      el.style.setProperty(
+        '--imn-sheet-bottom',
+        `${Math.max(0, Math.round(window.innerHeight - h - vv.offsetTop))}px`
+      );
     };
 
     apply();
