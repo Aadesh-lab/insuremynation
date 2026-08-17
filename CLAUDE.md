@@ -51,6 +51,7 @@ node scripts/export-kb.mjs   # regenerate kb-corpus.txt from the site's own copy
 
 node scripts/check-split-options.mjs   # chat: the reply-to-chips parser
 node scripts/check-page-context.mjs    # chat: first-seen landed_from / referrer
+node scripts/check-contact-ask.mjs     # chat: spotting the contact turn
 
 go build ./... && go vet ./... && go test ./...
 ```
@@ -139,10 +140,11 @@ What is left, and what each piece is for:
 | `useHeadlessChat.js` | the three-endpoint client: sessions, turns, errors, terminal state |
 | `pageContext.js` | the `context_variables` that decide where the funnel opens, and the attribution |
 | `splitOptions.js` | turns the `- ` lines of a reply into chips |
+| `contactAsk.js` / `ContactForm.jsx` / `countries.js` | the contact turn as fields instead of a paragraph |
 | `ChatPanel.jsx` / `Message.jsx` | the panel, per the WhatsApp-style design |
 | `ChatWidget.jsx` | launcher, open/close, Escape |
 
-Five things that are easy to get wrong:
+Six things that are easy to get wrong:
 
 - **It only works on an allowlisted origin.** Not a setting of ours — imagine.bo keeps the
   list, and everything else gets `403 Domain not allowed`. `localhost:5173` is **not** on it
@@ -157,14 +159,25 @@ Five things that are easy to get wrong:
   and stops at the first non-option — which finds nothing, because the live opener ends with
   a line of prose *after* the list. `node scripts/check-split-options.mjs` pins the real
   shape.
+- **The contact turn is spotted by its wording** (`contactAsk.js`), because nothing in the
+  response says "I am asking for details now". Their prompt is theirs to reword, so this fails
+  soft to the composer and `check-contact-ask.mjs` holds the current text. Ask them for a
+  marker on the response and this whole file goes away.
 - **A finished conversation removes the composer** rather than disabling it. The session is
   deleted their side, so sending into it opens a *second* conversation — and since a
   conversation ends in a lead, that is a duplicate in the CRM.
 - **`Message.jsx` renders text as a child, never `innerHTML`**, with `pre-wrap`: replies carry
   newlines and are explicitly not markdown, so nothing must run them through a renderer.
 
-**Never add a contact form to the panel.** Their assistant collects name, mobile and email
-itself as part of the funnel; a second ask means asking twice for something already captured.
+**Never add a *second* ask for contact details.** Their assistant collects name, mobile and
+email itself, two turns in, and that lead is theirs. What the panel does have is a form that
+answers *their* question — `ContactForm.jsx`, shown when `isContactAsk()` matches the reply,
+because that one turn carries no `- ` options and so leaves the visitor typing three kinds of
+data into one box on a phone. It captures nothing: submitting sends an ordinary chat message
+(`name\n+91 number\nemail`) and the CRM record is still written on their side. The composer
+stays visible underneath, which is both their rule and the fallback when the detector misses —
+`node scripts/check-contact-ask.mjs` pins the live wording so a reword fails a check instead of
+silently removing the form.
 
 ### Mobile
 

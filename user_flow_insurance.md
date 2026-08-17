@@ -24,6 +24,7 @@ deleted — the headless integration has no key to hide, so the backend had no r
 | client | `useHeadlessChat.js` | three endpoints, one turn at a time, errors, terminal state, transcript persistence |
 | page context | `pageContext.js` | `context_variables`: which page, and first-seen ad attribution |
 | chips | `splitOptions.js` | the `- ` lines of a reply become tappable answers |
+| contact form | `contactAsk.js`, `ContactForm.jsx`, `countries.js` | the one turn that asks for details, as fields |
 
 Two `node` checks, no framework, for the two pieces that fail silently:
 `scripts/check-split-options.mjs` and `scripts/check-page-context.mjs`.
@@ -80,9 +81,39 @@ had a conversation. The reply carries `session_token`, `run_id` and `opening_mes
 4. `splitOptions` pulls the trailing `- ` lines out for chips. The composer stays available
    throughout: a visitor must always be able to type "we are four in Gurgaon" instead.
 
-**The shape of it**, per their guide: greeting → **contact details** → five questions →
-summary → "would you like an adviser to call you back?" → close. Claims and job enquiries
-branch off after the contact step and skip the questions.
+**The shape of it**, and this is now observed rather than quoted: greeting with the first
+question → the visitor answers → **contact details** → the remaining questions → summary →
+"would you like an adviser to call you back?" → close. Claims and job enquiries branch off
+after the contact step and skip the questions.
+
+### The contact turn
+
+Two turns in, the assistant stops and asks in prose:
+
+> Before we start, let me take your details so a counsellor can follow up properly - and so
+> nothing is lost if we get disconnected.
+> **Your name, the best mobile number, and your email?**
+> By sharing these, you agree that InsureNation may contact you about this enquiry. We never
+> make marketing calls.
+
+It is the **only** turn with no `- ` options, so it is the only one where the visitor would
+otherwise face a bare keyboard — and it is asking for the thing the whole conversation exists
+to capture. `isContactAsk()` recognises it and the panel shows a form instead: name, a country
+dial code (all 239, India default) with the number, and an optional email.
+
+Three things about it that matter:
+
+- **It captures nothing.** Submitting sends `name\n+91 number\nemail` as an ordinary chat
+  message. The lead is written by imagine.bo, exactly as if the visitor had typed it.
+- **Email is optional** because their funnel treats it that way — the observed reply gave only
+  a name and a number and it moved straight on to the next question.
+- **The consent sentence stays in their bubble**, above the form. It is not restated, reduced
+  to a tickbox, or hidden behind a button.
+
+The trigger is a heuristic over their prompt, which they can reword. It fails soft — a miss
+means the composer, which is what the visitor had before — and `node
+scripts/check-contact-ask.mjs` pins the current wording so a reword shows up as a failing
+check. The exact fix is a marker on their response; see §7.
 
 **Step n+1 — the close.** `finished: true`. The session is deleted their side, so the panel
 **removes the composer** rather than disabling it and offers *Start a new chat*. Sending into
@@ -151,10 +182,13 @@ says so, it being a bearer token for one conversation.
 
 Found by running it. Quote the `run_id` when raising any of them.
 
-- **v2's early contact ask is not deployed.** The guide says name, mobile and email arrive in
-  the second or third turn; run 5684 walked a whole health funnel and was never asked. Nothing
-  here needs changing when it lands — the ask is another turn of text, and this client never
-  models whether contact details exist.
+- **Ask them for a marker on the contact turn.** A field on the response — `needs: "contact"` —
+  would replace the wording heuristic in `contactAsk.js` with an exact signal, and it is their
+  funnel declaring its own step rather than us inferring it. Until then a reword silently
+  removes the form (the visitor falls back to typing, so nothing breaks).
+- ~~v2's early contact ask is not deployed.~~ It is now: it arrives after the first answer,
+  which is where the form hooks in. Earlier runs missed it only because every one of them
+  declined the callback, so the funnel never reached that branch.
 - **`context_variables.product` is not honoured.** `/?product=life` sent with `product: "life"`
   still opened the generic "Which cover are you looking for?" (run 5648), where the guide says
   it "wins over `page`". We send it exactly as documented. A one-line workaround exists — send

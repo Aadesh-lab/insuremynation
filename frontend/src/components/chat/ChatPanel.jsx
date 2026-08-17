@@ -1,5 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { BLUE, DEEP, EMAIL, PHONE } from '../../data/site';
+import { isContactAsk } from './contactAsk';
+import ContactForm from './ContactForm';
 import Message from './Message';
 
 export default function ChatPanel({ chat, onClose }) {
@@ -85,6 +87,16 @@ export default function ChatPanel({ chat, onClose }) {
     if (el) el.scrollTop = el.scrollHeight;
   }, [messages, pending, error]);
 
+  /**
+   * Whether the assistant is currently asking for contact details, in which case the visitor
+   * gets a form rather than a bare keyboard. Keyed on the last assistant reply, so a refresh
+   * mid-question brings the form back with the restored transcript, and the "Thanks, Utsav!"
+   * that follows dismisses it.
+   */
+  const last = messages[messages.length - 1];
+  const askingContact =
+    !finished && !chips && last?.role === 'assistant' && !last.streaming && isContactAsk(last.text);
+
   const submit = (text) => {
     const value = (text ?? draft).trim();
     if (!value || pending) return;
@@ -149,6 +161,12 @@ export default function ChatPanel({ chat, onClose }) {
 
         {error && <ErrorNotice error={error} onRetry={() => { clearError(); submit(error.retry); }} />}
       </div>
+
+      {/* The contact turn is the one question with no options, so the form and the chips
+          never compete for this slot. Both leave the composer alone underneath. */}
+      {askingContact && !error && (
+        <ContactForm disabled={pending} onSubmit={(text) => submit(text)} />
+      )}
 
       {/* Hidden when the assistant has not offered a choice, and while an error is
           showing so the retry link is the only thing to click. Never the *only* way to

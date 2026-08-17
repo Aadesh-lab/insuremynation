@@ -16,9 +16,29 @@
 .imn-chat-launcher:focus-visible,
 .imn-chat-send:focus-visible,
 .imn-chat-chip:focus-visible,
-.imn-chat-iconbtn:focus-visible {
+.imn-chat-iconbtn:focus-visible,
+.imn-chat-field:focus-visible,
+.imn-chat-submit:focus-visible {
   outline: 2px solid rgb(0, 74, 173);
   outline-offset: 2px;
+}
+
+.imn-chat-field {
+  transition: border-color 0.15s ease;
+}
+.imn-chat-field:focus {
+  border-color: rgb(0, 74, 173);
+  outline: none;
+}
+.imn-chat-submit {
+  transition: background 0.18s ease;
+}
+.imn-chat-submit:hover:not(:disabled) {
+  background: rgb(0, 30, 71);
+}
+.imn-chat-submit:disabled {
+  opacity: 0.5;
+  cursor: default;
 }
 
 .imn-chat-panel {
@@ -158,9 +178,18 @@
   }
 
   /* 16px is the threshold below which iOS Safari zooms the page on focus, and a zoomed
-     page cannot be zoomed back out by the visitor. */
-  .imn-chat-input {
+     page cannot be zoomed back out by the visitor. The contact form's fields need it as
+     much as the composer — more so, since there are three of them in a row. */
+  .imn-chat-input,
+  .imn-chat-field {
     font-size: 16px !important;
+  }
+  .imn-chat-field,
+  .imn-chat-submit {
+    min-height: 44px !important;
+  }
+  .imn-chat-contact {
+    padding-bottom: 10px !important;
   }
 
   /* Thumbs, not cursors: 13px text in 8px of padding is a ~30px target. */
