@@ -42,6 +42,22 @@ export default function ChatWidget() {
     return () => window.removeEventListener('keydown', onKey);
   }, [open, closePanel]);
 
+  /**
+   * Locks the page behind the sheet while it is open, on phones only.
+   *
+   * The sheet covers most of the screen but not all of it, and a drag that starts outside the
+   * transcript — on the header, the composer, the dimmed strip — otherwise scrolls the site
+   * underneath. The chat appears to be stuck while the page slides away behind it.
+   *
+   * Desktop keeps its scroll: there the panel is a small card and the page around it is still
+   * the thing being read.
+   */
+  useEffect(() => {
+    if (!open || !window.matchMedia('(max-width: 560px)').matches) return undefined;
+    document.body.classList.add('imn-chat-locked');
+    return () => document.body.classList.remove('imn-chat-locked');
+  }, [open]);
+
   return (
     <>
       {open && (

@@ -118,14 +118,18 @@ function Row({ label, children }) {
   );
 }
 
+// It lives inside the scrolling transcript, so it reads as a card in the conversation rather
+// than a bar bolted to the bottom of the panel.
 const wrap = {
   display: 'flex',
   flexDirection: 'column',
   gap: 8,
-  padding: '10px 16px 12px',
-  borderTop: '1px solid rgba(0,74,173,0.12)',
+  padding: 12,
+  marginTop: 4,
+  border: '1px solid rgba(0,74,173,0.14)',
+  borderRadius: 14,
+  background: '#f8fafc',
   flexShrink: 0,
-  background: '#fff',
 };
 
 const input = {

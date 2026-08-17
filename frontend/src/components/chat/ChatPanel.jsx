@@ -80,22 +80,25 @@ export default function ChatPanel({ chat, onClose }) {
     }
   }, []);
 
-  // Pin to the newest content. Layout effect so the jump happens before paint
-  // rather than as a visible scroll on every streamed token.
-  useLayoutEffect(() => {
-    const el = scrollRef.current;
-    if (el) el.scrollTop = el.scrollHeight;
-  }, [messages, pending, error]);
-
   /**
    * Whether the assistant is currently asking for contact details, in which case the visitor
    * gets a form rather than a bare keyboard. Keyed on the last assistant reply, so a refresh
    * mid-question brings the form back with the restored transcript, and the "Thanks, Utsav!"
    * that follows dismisses it.
+   *
+   * Declared above the scroll effect because that effect lists it as a dependency, and a
+   * dependency array is evaluated during render.
    */
   const last = messages[messages.length - 1];
   const askingContact =
     !finished && !chips && last?.role === 'assistant' && !last.streaming && isContactAsk(last.text);
+
+  // Pin to the newest content. Layout effect so the jump happens before paint
+  // rather than as a visible scroll on every streamed token.
+  useLayoutEffect(() => {
+    const el = scrollRef.current;
+    if (el) el.scrollTop = el.scrollHeight;
+  }, [messages, pending, error, askingContact]);
 
   const submit = (text) => {
     const value = (text ?? draft).trim();
@@ -160,13 +163,16 @@ export default function ChatPanel({ chat, onClose }) {
         ))}
 
         {error && <ErrorNotice error={error} onRetry={() => { clearError(); submit(error.retry); }} />}
-      </div>
 
-      {/* The contact turn is the one question with no options, so the form and the chips
-          never compete for this slot. Both leave the composer alone underneath. */}
-      {askingContact && !error && (
-        <ContactForm disabled={pending} onSubmit={(text) => submit(text)} />
-      )}
+        {/* Inside the scroll area, unlike the chips, because it is tall. Pinned below the
+            transcript it would be clipped by the panel's overflow on a short screen — and
+            with nothing scrollable under the visitor's finger the gesture falls through to
+            the page behind, which reads as a form that cannot be scrolled. Here it scrolls
+            with the conversation, and the auto-scroll below brings it into view. */}
+        {askingContact && !error && (
+          <ContactForm disabled={pending} onSubmit={(text) => submit(text)} />
+        )}
+      </div>
 
       {/* Hidden when the assistant has not offered a choice, and while an error is
           showing so the retry link is the only thing to click. Never the *only* way to

@@ -105,6 +105,10 @@
 .imn-chat-scroll {
   scrollbar-width: thin;
   scrollbar-color: rgba(0, 74, 173, 0.28) transparent;
+  /* Reaching the top or bottom of the transcript must not hand the gesture to the page
+     behind, which on a phone reads as the site scrolling away under the chat. */
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
 }
 .imn-chat-scroll::-webkit-scrollbar {
   width: 8px;
@@ -148,6 +152,15 @@
   .imn-chat-backdrop {
     display: block;
     animation: imn-chat-fade-in 0.2s ease both;
+    /* A drag on the dimmed area is not a scroll of the page underneath. */
+    touch-action: none;
+  }
+
+  /* Set on <body> while the sheet is open. Without it a gesture that starts anywhere but the
+     transcript — the header, the composer, the form's own padding — scrolls the site behind
+     the sheet instead of doing nothing. */
+  body.imn-chat-locked {
+    overflow: hidden !important;
   }
 
   /* A bottom sheet, not a full-screen takeover: a 380px floating card on a 360px phone is
