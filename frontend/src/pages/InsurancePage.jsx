@@ -138,6 +138,138 @@ export default function InsurancePage({ product }) {
         </motion.div>
       </div>
 
+      {/* ------------------------------------------------------------- QUOTE FORM */}
+      <div
+        data-r="quote"
+        style={{
+          position: 'relative',
+          width: 1728,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 56,
+          padding: '104px 96px',
+          alignItems: 'flex-start',
+          boxSizing: 'border-box',
+        }}
+      >
+        <Reveal as="span" y={20} duration={0.5}>
+          <Eyebrow>[ get your best quote ]</Eyebrow>
+        </Reveal>
+        <div
+          data-r="qrow"
+          style={{
+            display: 'flex',
+            flexDirection: 'row',
+            gap: 64,
+            alignItems: 'stretch',
+            width: '100%',
+          }}
+        >
+          <Reveal
+            data-r="qleft"
+            style={{
+              width: 600,
+              flex: '0 0 600px',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 28,
+            }}
+          >
+            <SplitHeading data-r="qhead" lines={['Tell Us', 'What You Need']} fontSize={52} />
+            <Body data-r="qcopy">
+              Share a few details and a certified counsellor will come back with quotes from our
+              partner insurers - compared side by side, with the trade-offs explained in plain
+              language.
+            </Body>
+            <div
+              style={{
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 14,
+                marginTop: 6,
+              }}
+            >
+              <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                <PhoneIcon stroke={BLUE} />
+                <a
+                  href={PHONE_HREF}
+                  data-r="qcontact"
+                  style={{
+                    fontFamily: 'Poppins,sans-serif',
+                    fontWeight: 500,
+                    fontSize: 21,
+                    color: BLUE,
+                  }}
+                >
+                  {PHONE}
+                </a>
+              </div>
+              <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+                <MailIcon fill={BLUE} width={19} />
+                <a
+                  href={EMAIL_HREF}
+                  data-r="qcontact"
+                  style={{
+                    fontFamily: 'Poppins,sans-serif',
+                    fontWeight: 500,
+                    fontSize: 21,
+                    color: BLUE,
+                  }}
+                >
+                  {EMAIL}
+                </a>
+              </div>
+            </div>
+          </Reveal>
+
+          <Reveal
+            data-r="qform"
+            delay={0.12}
+            style={{
+              width: 872,
+              boxShadow: `inset 0 0 0 1px ${BLUE}`,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 26,
+              padding: '48px 44px',
+              boxSizing: 'border-box',
+            }}
+          >
+            <Stagger
+              data-r="qfields"
+              stagger={0.06}
+              style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(2,minmax(0,1fr))',
+                gap: '22px 24px',
+                width: '100%',
+              }}
+            >
+              {fields.map((field) => (
+                <Stagger.Item key={field.key} style={{ minWidth: 0 }}>
+                  <Field
+                    label={field.label}
+                    placeholder={field.placeholder}
+                    value={form[field.key] ?? ''}
+                    onChange={setField(field.key)}
+                  />
+                </Stagger.Item>
+              ))}
+            </Stagger>
+            <SubmitRow
+              sent={sent}
+              onClick={() => setSent(true)}
+              label={sent ? 'Request received' : 'Get my quote'}
+              note={
+                sent
+                  ? 'Thanks - a counsellor will call you within one working day.'
+                  : 'No spam, no auto-dialers. One counsellor, one call back.'
+              }
+            />
+          </Reveal>
+        </div>
+      </div>
+
       {/* --------------------------------------------------------- WHY IT MATTERS */}
       <div
         data-r="why"
@@ -147,7 +279,7 @@ export default function InsurancePage({ product }) {
           display: 'flex',
           flexDirection: 'column',
           gap: 56,
-          padding: '104px 96px',
+          padding: '0 96px 104px',
           alignItems: 'flex-start',
           boxSizing: 'border-box',
           background: '#fff',
@@ -358,138 +490,6 @@ export default function InsurancePage({ product }) {
               ))}
             </Stagger>
           </div>
-        </div>
-      </div>
-
-      {/* ------------------------------------------------------------- QUOTE FORM */}
-      <div
-        data-r="quote"
-        style={{
-          position: 'relative',
-          width: 1728,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 56,
-          padding: '0 96px 104px',
-          alignItems: 'flex-start',
-          boxSizing: 'border-box',
-        }}
-      >
-        <Reveal as="span" y={20} duration={0.5}>
-          <Eyebrow>[ get your best quote ]</Eyebrow>
-        </Reveal>
-        <div
-          data-r="qrow"
-          style={{
-            display: 'flex',
-            flexDirection: 'row',
-            gap: 64,
-            alignItems: 'stretch',
-            width: '100%',
-          }}
-        >
-          <Reveal
-            data-r="qleft"
-            style={{
-              width: 600,
-              flex: '0 0 600px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 28,
-            }}
-          >
-            <SplitHeading data-r="qhead" lines={['Tell Us', 'What You Need']} fontSize={52} />
-            <Body data-r="qcopy">
-              Share a few details and a certified counsellor will come back with quotes from our
-              partner insurers - compared side by side, with the trade-offs explained in plain
-              language.
-            </Body>
-            <div
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 14,
-                marginTop: 6,
-              }}
-            >
-              <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                <PhoneIcon stroke={BLUE} />
-                <a
-                  href={PHONE_HREF}
-                  data-r="qcontact"
-                  style={{
-                    fontFamily: 'Poppins,sans-serif',
-                    fontWeight: 500,
-                    fontSize: 21,
-                    color: BLUE,
-                  }}
-                >
-                  {PHONE}
-                </a>
-              </div>
-              <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-                <MailIcon fill={BLUE} width={19} />
-                <a
-                  href={EMAIL_HREF}
-                  data-r="qcontact"
-                  style={{
-                    fontFamily: 'Poppins,sans-serif',
-                    fontWeight: 500,
-                    fontSize: 21,
-                    color: BLUE,
-                  }}
-                >
-                  {EMAIL}
-                </a>
-              </div>
-            </div>
-          </Reveal>
-
-          <Reveal
-            data-r="qform"
-            delay={0.12}
-            style={{
-              width: 872,
-              boxShadow: `inset 0 0 0 1px ${BLUE}`,
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 26,
-              padding: '48px 44px',
-              boxSizing: 'border-box',
-            }}
-          >
-            <Stagger
-              data-r="qfields"
-              stagger={0.06}
-              style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(2,minmax(0,1fr))',
-                gap: '22px 24px',
-                width: '100%',
-              }}
-            >
-              {fields.map((field) => (
-                <Stagger.Item key={field.key} style={{ minWidth: 0 }}>
-                  <Field
-                    label={field.label}
-                    placeholder={field.placeholder}
-                    value={form[field.key] ?? ''}
-                    onChange={setField(field.key)}
-                  />
-                </Stagger.Item>
-              ))}
-            </Stagger>
-            <SubmitRow
-              sent={sent}
-              onClick={() => setSent(true)}
-              label={sent ? 'Request received' : 'Get my quote'}
-              note={
-                sent
-                  ? 'Thanks - a counsellor will call you within one working day.'
-                  : 'No spam, no auto-dialers. One counsellor, one call back.'
-              }
-            />
-          </Reveal>
         </div>
       </div>
 

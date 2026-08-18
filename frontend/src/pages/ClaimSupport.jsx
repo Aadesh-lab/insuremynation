@@ -176,141 +176,6 @@ export default function ClaimSupport() {
         </motion.div>
       </div>
 
-      {/* ------------------------------------------------------------------- WHY */}
-      <div
-        data-r="why"
-        style={{
-          position: 'relative',
-          width: 1728,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 56,
-          padding: '104px 96px',
-          alignItems: 'flex-start',
-          boxSizing: 'border-box',
-          background: '#fff',
-        }}
-      >
-        <Reveal as="span" y={20} duration={0.5}>
-          <Eyebrow>[ why we do this ]</Eyebrow>
-        </Reveal>
-        <div
-          data-r="wrow"
-          style={{
-            display: 'flex',
-            flexDirection: 'row',
-            gap: 96,
-            alignItems: 'flex-start',
-            width: '100%',
-          }}
-        >
-          <Reveal data-r="wheadwrap" style={{ width: 520, flexShrink: 0 }}>
-            <SplitHeading
-              data-r="whead"
-              lines={['Grievances', 'Deserve An', 'Expert']}
-              style={{ width: '100%' }}
-            />
-          </Reveal>
-          <Stagger
-            data-r="wcopy"
-            stagger={0.1}
-            style={{ width: 900, display: 'flex', flexDirection: 'column', gap: 26 }}
-          >
-            {WHY_COPY.map((text) => (
-              <Stagger.Item key={text} as="span">
-                <Body>{text}</Body>
-              </Stagger.Item>
-            ))}
-          </Stagger>
-        </div>
-      </div>
-
-      {/* --------------------------------------------------------- WHAT WE HELP WITH */}
-      <div
-        data-r="cover"
-        style={{
-          position: 'relative',
-          width: 1728,
-          display: 'flex',
-          flexDirection: 'column',
-          gap: 56,
-          padding: '0 96px 104px',
-          alignItems: 'flex-start',
-          boxSizing: 'border-box',
-        }}
-      >
-        <Reveal as="span" y={20} duration={0.5}>
-          <Eyebrow>[ what we help with ]</Eyebrow>
-        </Reveal>
-        <Stagger
-          data-r="cgrid"
-          stagger={0.06}
-          style={{
-            display: 'grid',
-            gridTemplateColumns: 'repeat(3,minmax(0,1fr))',
-            gap: 1,
-            background: BLUE,
-            width: '100%',
-          }}
-        >
-          {ISSUES.map((issue, i) => (
-            <Stagger.Item
-              key={issue.title}
-              variants={staggerPassthrough}
-              style={{
-                background: '#fff',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 12,
-                padding: '40px 34px',
-                boxSizing: 'border-box',
-              }}
-            >
-              <Stagger.Item
-                as="span"
-                variants={staggerItemFade}
-                style={{
-                  fontFamily: 'Poppins,sans-serif',
-                  fontSize: 17,
-                  lineHeight: 1,
-                  color: 'rgba(0,74,173,0.6)',
-                }}
-              >
-                {String(i + 1).padStart(2, '0')}
-              </Stagger.Item>
-              <Stagger.Item
-                as="span"
-                variants={staggerItemFade}
-                style={{
-                  fontFamily: 'Poppins,sans-serif',
-                  fontWeight: 700,
-                  fontSize: 25,
-                  lineHeight: 1.25,
-                  color: BLUE,
-                  textWrap: 'pretty',
-                }}
-              >
-                {issue.title}
-              </Stagger.Item>
-              <Stagger.Item
-                as="span"
-                variants={staggerItemFade}
-                style={{
-                  fontFamily: 'Poppins,sans-serif',
-                  fontWeight: 300,
-                  fontSize: 19,
-                  lineHeight: 1.45,
-                  color: BLUE,
-                  textWrap: 'pretty',
-                }}
-              >
-                {issue.sub}
-              </Stagger.Item>
-            </Stagger.Item>
-          ))}
-        </Stagger>
-      </div>
-
       {/* ---------------------------------------------------------- SUPPORT FORM */}
       <div
         data-r="quote"
@@ -320,7 +185,7 @@ export default function ClaimSupport() {
           display: 'flex',
           flexDirection: 'column',
           gap: 56,
-          padding: '0 96px 104px',
+          padding: '104px 96px',
           alignItems: 'flex-start',
           boxSizing: 'border-box',
         }}
@@ -444,6 +309,141 @@ export default function ClaimSupport() {
             />
           </Reveal>
         </div>
+      </div>
+
+      {/* ------------------------------------------------------------------- WHY */}
+      <div
+        data-r="why"
+        style={{
+          position: 'relative',
+          width: 1728,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 56,
+          padding: '0 96px 104px',
+          alignItems: 'flex-start',
+          boxSizing: 'border-box',
+          background: '#fff',
+        }}
+      >
+        <Reveal as="span" y={20} duration={0.5}>
+          <Eyebrow>[ why we do this ]</Eyebrow>
+        </Reveal>
+        <div
+          data-r="wrow"
+          style={{
+            display: 'flex',
+            flexDirection: 'row',
+            gap: 96,
+            alignItems: 'flex-start',
+            width: '100%',
+          }}
+        >
+          <Reveal data-r="wheadwrap" style={{ width: 520, flexShrink: 0 }}>
+            <SplitHeading
+              data-r="whead"
+              lines={['Grievances', 'Deserve An', 'Expert']}
+              style={{ width: '100%' }}
+            />
+          </Reveal>
+          <Stagger
+            data-r="wcopy"
+            stagger={0.1}
+            style={{ width: 900, display: 'flex', flexDirection: 'column', gap: 26 }}
+          >
+            {WHY_COPY.map((text) => (
+              <Stagger.Item key={text} as="span">
+                <Body>{text}</Body>
+              </Stagger.Item>
+            ))}
+          </Stagger>
+        </div>
+      </div>
+
+      {/* --------------------------------------------------------- WHAT WE HELP WITH */}
+      <div
+        data-r="cover"
+        style={{
+          position: 'relative',
+          width: 1728,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 56,
+          padding: '0 96px 104px',
+          alignItems: 'flex-start',
+          boxSizing: 'border-box',
+        }}
+      >
+        <Reveal as="span" y={20} duration={0.5}>
+          <Eyebrow>[ what we help with ]</Eyebrow>
+        </Reveal>
+        <Stagger
+          data-r="cgrid"
+          stagger={0.06}
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(3,minmax(0,1fr))',
+            gap: 1,
+            background: BLUE,
+            width: '100%',
+          }}
+        >
+          {ISSUES.map((issue, i) => (
+            <Stagger.Item
+              key={issue.title}
+              variants={staggerPassthrough}
+              style={{
+                background: '#fff',
+                display: 'flex',
+                flexDirection: 'column',
+                gap: 12,
+                padding: '40px 34px',
+                boxSizing: 'border-box',
+              }}
+            >
+              <Stagger.Item
+                as="span"
+                variants={staggerItemFade}
+                style={{
+                  fontFamily: 'Poppins,sans-serif',
+                  fontSize: 17,
+                  lineHeight: 1,
+                  color: 'rgba(0,74,173,0.6)',
+                }}
+              >
+                {String(i + 1).padStart(2, '0')}
+              </Stagger.Item>
+              <Stagger.Item
+                as="span"
+                variants={staggerItemFade}
+                style={{
+                  fontFamily: 'Poppins,sans-serif',
+                  fontWeight: 700,
+                  fontSize: 25,
+                  lineHeight: 1.25,
+                  color: BLUE,
+                  textWrap: 'pretty',
+                }}
+              >
+                {issue.title}
+              </Stagger.Item>
+              <Stagger.Item
+                as="span"
+                variants={staggerItemFade}
+                style={{
+                  fontFamily: 'Poppins,sans-serif',
+                  fontWeight: 300,
+                  fontSize: 19,
+                  lineHeight: 1.45,
+                  color: BLUE,
+                  textWrap: 'pretty',
+                }}
+              >
+                {issue.sub}
+              </Stagger.Item>
+            </Stagger.Item>
+          ))}
+        </Stagger>
       </div>
 
       <TalkToExperts padding="0" animate />
