@@ -123,7 +123,7 @@ reshapes it through `[data-r="..."]` media queries. That structure is kept intac
 
 **The UI is ours; everything behind it is imagine.bo's.** `useHeadlessChat.js` calls
 `orchestrator.imagine.bo` **direct from the browser** against the contract in
-`HEADLESS_CHAT_INTEGRATION_v2.md`. They own the funnel questions, the system prompt and the
+`HEADLESS_CHAT_INTEGRATION.md`. They own the funnel questions, the system prompt and the
 lead capture — their assistant asks for the visitor's contact details itself and writes the
 lead to their CRM.
 
@@ -158,7 +158,11 @@ Six things that are easy to get wrong:
   `- ` lines. The integration guide's own version of that parser walks up from the final line
   and stops at the first non-option — which finds nothing, because the live opener ends with
   a line of prose *after* the list. `node scripts/check-split-options.mjs` pins the real
-  shape.
+  shape. But when a response carries a populated `options` array, **those win and the
+  heuristic is skipped**: they are server-declared choices, and the tapped option's `id`
+  goes back as `reply_id` — on a consent option (the WhatsApp ask) that id is the only
+  thing that writes the consent row; the title alone reads fine and records nothing. Typed
+  answers send `reply_id: null`, and so does the `session_expired` resend.
 - **The contact turn is spotted by its wording** (`contactAsk.js`), because nothing in the
   response says "I am asking for details now". Their prompt is theirs to reword, so this fails
   soft to the composer and `check-contact-ask.mjs` holds the current text. Ask them for a
@@ -174,7 +178,10 @@ email itself, two turns in, and that lead is theirs. What the panel does have is
 answers *their* question — `ContactForm.jsx`, shown when `isContactAsk()` matches the reply,
 because that one turn carries no `- ` options and so leaves the visitor typing three kinds of
 data into one box on a phone. It captures nothing: submitting sends an ordinary chat message
-(`name\n+91 number\nemail`) and the CRM record is still written on their side. The composer
+(`name\n+91 number\nemail`) and the CRM record is still written on their side. Under the
+fields sits a consent checkbox, ticked by default, mirroring the consent sentence in their
+bubble; unticking it does not block the send — it appends an explicit refusal line to the
+message instead. The composer
 stays visible underneath, which is both their rule and the fallback when the detector misses —
 `node scripts/check-contact-ask.mjs` pins the live wording so a reword fails a check instead of
 silently removing the form.

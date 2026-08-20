@@ -8,8 +8,9 @@ import { COUNTRIES, DEFAULT_DIAL, flagOf } from './countries';
  *
  * It does **not** capture anything: `onSubmit` sends a normal chat message to imagine.bo, who
  * own the lead and the CRM. This is an input method for their question — which is also why the
- * composer stays visible underneath it, and why the consent sentence is left where it is, in
- * their bubble above, rather than being restated or reduced to a tickbox here.
+ * composer stays visible underneath it. No WhatsApp checkbox here: the workflow asks that
+ * permission itself, one turn later, as server-declared buttons whose tap is the consent
+ * record — a checkbox on this form was a second ask of the same question.
  */
 export default function ContactForm({ onSubmit, disabled }) {
   const [name, setName] = useState('');

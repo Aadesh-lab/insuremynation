@@ -84,7 +84,7 @@ export default function ChatPanel({ chat, onClose }) {
   /**
    * Whether the assistant is currently asking for contact details, in which case the visitor
    * gets a form rather than a bare keyboard. Keyed on the last assistant reply, so a refresh
-   * mid-question brings the form back with the restored transcript, and the "Thanks, Utsav!"
+   * mid-question brings the form back with the restored transcript, and the "Thanks, Rahul!"
    * that follows dismisses it.
    *
    * Declared above the scroll effect because that effect lists it as a dependency, and a
@@ -101,11 +101,14 @@ export default function ChatPanel({ chat, onClose }) {
     if (el) el.scrollTop = el.scrollHeight;
   }, [messages, pending, error, askingContact]);
 
-  const submit = (text) => {
+  // `replyId` only ever comes from a tapped server option; typed text and the contact
+  // form send null, which the orchestrator reads as "the visitor typed this". `extra`
+  // carries the contact form's consent boolean onto the POST body.
+  const submit = (text, replyId = null, extra) => {
     const value = (text ?? draft).trim();
     if (!value || pending) return;
     setDraft('');
-    send(value);
+    send(value, replyId, extra);
   };
 
   return (
@@ -171,7 +174,7 @@ export default function ChatPanel({ chat, onClose }) {
             the page behind, which reads as a form that cannot be scrolled. Here it scrolls
             with the conversation, and the auto-scroll below brings it into view. */}
         {askingContact && !error && (
-          <ContactForm disabled={pending} onSubmit={(text) => submit(text)} />
+          <ContactForm disabled={pending} onSubmit={(text, extra) => submit(text, null, extra)} />
         )}
       </div>
 
@@ -204,10 +207,41 @@ export default function ChatPanel({ chat, onClose }) {
  * The options under a question. Pills while the set is small; a radio-style list once it
  * is not. The threshold is space, not count: three short answers ("Yes / No / Not sure")
  * sit in one pill row, but three long ones already wrap to three, at which point rows
- * with a separator read better and pack tighter.
+ * with a separator read better and pack tighter. A server option carrying a description
+ * needs two lines, so it always gets a row.
+ *
+ * Every chip is `{ id, label, description }`. The id is echoed as `reply_id`, which on a
+ * consent option is the tap that gets recorded — see HEADLESS_CHAT_INTEGRATION.md.
+ *
+ * Two shortcuts are appended to heuristic (`- ` line) sets, so the visitor can shift
+ * mid-funnel without typing: "Change policy type" (skipped when the set already *is* the
+ * cover list — the opener's six products) and "Request callback" (skipped when the turn
+ * already offers a callback of its own). Server-declared options never get them: those
+ * are the turn's real choices — on the WhatsApp consent turn the two buttons ARE the
+ * answer set, and a shortcut beside them invites skipping a permission question.
+ *
+ * A shortcut's `value` is what gets sent, and it is deliberately not the label: run 6390
+ * showed the bot reads the bare label "Change policy type" as "change my *existing*
+ * policy" and routes to porting — the sentence below is the wording that reliably routes
+ * to the cover list instead. The orchestrator routes typed text, so nothing here models
+ * the funnel.
  */
+const PRODUCT = /health|life|car|bike|travel|marine/i;
+
 function ChipRow({ chips, pending, onPick }) {
-  const asList = chips.length > 3 || chips.some((label) => label.length > 28);
+  const shortcut = (label, value) => ({ id: null, label, value, description: null, shortcut: true });
+  const serverDeclared = chips.some((c) => c.id != null);
+  const all = [...chips];
+  if (!serverDeclared) {
+    if (chips.filter((c) => PRODUCT.test(c.label)).length < 3)
+      all.push(
+        shortcut('Change policy type', 'I want a different type of insurance. Which covers do you offer?')
+      );
+    if (!chips.some((c) => /call\s?back/i.test(c.label)))
+      all.push(shortcut('Request callback'));
+  }
+
+  const asList = all.length > 3 || all.some((c) => c.label.length > 28 || c.description);
 
   if (!asList) {
     return (
@@ -215,23 +249,23 @@ function ChipRow({ chips, pending, onPick }) {
         className="imn-chat-chips"
         style={{ display: 'flex', flexWrap: 'wrap', gap: 8, padding: '4px 16px 12px', flexShrink: 0 }}
       >
-        {chips.map((label) => (
+        {all.map((chip) => (
           <button
-            key={label}
+            key={chip.label}
             type="button"
             className="imn-chat-chip"
             disabled={pending}
             // The label *is* the message — no aria-label, because it would only repeat
             // the visible text.
-            onClick={() => onPick(label)}
+            onClick={() => onPick(chip.value ?? chip.label, chip.id)}
             style={{
               appearance: 'none',
-              background: '#fff',
+              background: chip.shortcut ? 'rgba(0,74,173,0.06)' : '#fff',
               border: '1.5px solid rgba(0,74,173,0.22)',
               borderRadius: 10,
               padding: '7px 12px',
               fontFamily: 'inherit',
-              fontWeight: 400,
+              fontWeight: chip.shortcut ? 500 : 400,
               fontSize: 11,
               lineHeight: 1.2,
               color: BLUE,
@@ -239,7 +273,7 @@ function ChipRow({ chips, pending, onPick }) {
               textAlign: 'left',
             }}
           >
-            {label}
+            {chip.label}
           </button>
         ))}
       </div>
@@ -259,25 +293,25 @@ function ChipRow({ chips, pending, onPick }) {
         flexShrink: 0,
       }}
     >
-      {chips.map((label, i) => (
+      {all.map((chip, i) => (
         <button
-          key={label}
+          key={chip.label}
           type="button"
           className="imn-chat-chip"
           disabled={pending}
-          onClick={() => onPick(label)}
+          onClick={() => onPick(chip.value ?? chip.label, chip.id)}
           style={{
             appearance: 'none',
             display: 'flex',
             alignItems: 'center',
             gap: 8,
             width: '100%',
-            background: '#fff',
+            background: chip.shortcut ? 'rgba(0,74,173,0.06)' : '#fff',
             border: 0,
             borderTop: i > 0 ? '1px solid rgba(0,74,173,0.12)' : 0,
             padding: '7px 12px',
             fontFamily: 'inherit',
-            fontWeight: 400,
+            fontWeight: chip.shortcut ? 500 : 400,
             fontSize: 11,
             lineHeight: 1.2,
             color: BLUE,
@@ -295,7 +329,14 @@ function ChipRow({ chips, pending, onPick }) {
               flexShrink: 0,
             }}
           />
-          {label}
+          <span style={{ display: 'flex', flexDirection: 'column', gap: 2, minWidth: 0 }}>
+            {chip.label}
+            {chip.description && (
+              <span style={{ fontSize: 10, fontWeight: 300, color: 'rgba(0,30,71,0.55)' }}>
+                {chip.description}
+              </span>
+            )}
+          </span>
         </button>
       ))}
     </div>

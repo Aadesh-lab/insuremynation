@@ -5,7 +5,7 @@ import { splitOptions } from './splitOptions';
 /**
  * Chat state and transport for the imagine.bo orchestrator.
  *
- * Built to HEADLESS_CHAT_INTEGRATION_v2.md. Three endpoints, JSON in and JSON out, called
+ * Built to HEADLESS_CHAT_INTEGRATION.md. Three endpoints, JSON in and JSON out, called
  * **direct from the browser** — there is no API key in this integration, so unlike the
  * `/v1` proxy in useChat.js there is nothing for our Go service to hold. The widget token
  * ships in the page. What protects the endpoint instead is a domain allowlist on their
@@ -75,11 +75,36 @@ async function post(path, body, signal) {
 let nextId = 0;
 const makeId = () => `m${nextId++}`;
 
-/** An assistant reply, split into the bubble text and any chips it offered. */
-function assistantMessage(text) {
+/**
+ * An assistant reply, split into the bubble text and any chips it offered.
+ *
+ * Two sources of chips, one shape. When the server declares real options — id, title,
+ * description — those win and the `- ` heuristic is skipped: they are the turn's actual
+ * choices, and the id echoed back as `reply_id` is what records a consent tap. The
+ * heuristic covers every other turn, whose chips carry no id (`reply_id: null`, i.e. "the
+ * visitor typed this").
+ */
+function assistantMessage(text, serverOptions) {
+  if (serverOptions?.length) {
+    const options = serverOptions.map((o) => ({
+      id: o.id,
+      label: o.title,
+      description: o.description ?? null,
+    }));
+    return { id: makeId(), role: 'assistant', text, options };
+  }
   const { body, options } = splitOptions(text);
-  return { id: makeId(), role: 'assistant', text: body, options };
+  return {
+    id: makeId(),
+    role: 'assistant',
+    text: body,
+    options: options.map((label) => ({ id: null, label, description: null })),
+  };
 }
+
+/** Transcripts persisted before options carried ids are arrays of bare labels. */
+const normalizeOption = (o) =>
+  typeof o === 'string' ? { id: null, label: o, description: null } : o;
 
 export function useHeadlessChat() {
   const restored = useRef(readJSON(STATE_KEY));
@@ -147,7 +172,7 @@ export function useHeadlessChat() {
       // an empty bubble.
       if (data.opening_message && !silent) {
         setMessages((prev) => {
-          const next = [...prev, assistantMessage(data.opening_message)];
+          const next = [...prev, assistantMessage(data.opening_message, data.options)];
           persist(next, false);
           return next;
         });
@@ -170,8 +195,13 @@ export function useHeadlessChat() {
   const init = useCallback(() => start(), [start]);
 
   const send = useCallback(
-    async (raw) => {
+    // `replyId` is the tapped option's server id, null when the visitor typed. It has to
+    // be echoed: on a consent option the id is what writes the consent row — the title
+    // alone reads fine and records nothing. `extra.consent` is the contact form's
+    // WhatsApp checkbox, sent as a real boolean on the POST body.
+    async (raw, replyId = null, extra) => {
       const text = String(raw ?? '').trim().slice(0, MAX_MESSAGE_LEN);
+      const consent = extra?.consent === true ? { consent: true } : {};
       // The guard is not cosmetic: each turn runs a model call, and two in flight
       // interleave and confuse the funnel.
       if (!text || busyRef.current) return;
@@ -215,7 +245,7 @@ export function useHeadlessChat() {
 
         let { status, data } = await post(
           'message',
-          { session_token: tokenRef.current, text },
+          { session_token: tokenRef.current, text, reply_id: replyId || null, ...consent },
           controller.signal
         );
 
@@ -234,7 +264,9 @@ export function useHeadlessChat() {
           }
           ({ status, data } = await post(
             'message',
-            { session_token: tokenRef.current, text },
+            // reply_id dropped: the fresh session never offered that option. The consent
+            // boolean survives — it is about the visitor, not the expired session.
+            { session_token: tokenRef.current, text, reply_id: null, ...consent },
             controller.signal
           ));
         }
@@ -245,7 +277,7 @@ export function useHeadlessChat() {
           return;
         }
 
-        const answer = assistantMessage(data?.assistant_text || EMPTY_ANSWER);
+        const answer = assistantMessage(data?.assistant_text || EMPTY_ANSWER, data?.options);
         const done = Boolean(data?.finished);
         if (done) {
           // Terminal: the session is deleted their side. Sending to it again would
@@ -302,7 +334,7 @@ export function useHeadlessChat() {
   const last = messages[messages.length - 1];
   const chips =
     !finished && last?.role === 'assistant' && !last.streaming && last.options?.length
-      ? last.options
+      ? last.options.map(normalizeOption)
       : null;
 
   return {

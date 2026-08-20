@@ -53,7 +53,7 @@ const NOT = {
     '- 150-500cc',
     '- Superbike',
   ].join('\n'),
-  acknowledgement: 'Thanks, Utsav!\n\nWhere are you with the policy right now?',
+  acknowledgement: 'Thanks, Rahul!\n\nWhere are you with the policy right now?',
   callback: [
     'So: a family floater for you, your spouse and kids, eldest 36 to 50, in Delhi NCR, around 10 lakh cover.',
     '',
@@ -81,12 +81,13 @@ for (const bad of ['', '   ', null, undefined]) {
 
 // --- the message that gets sent --------------------------------------------------------------
 assert.equal(
-  formatContact({ name: 'Utsav Jain', dial: '+91', phone: '9667012345', email: 'u@example.com' }),
-  'Utsav Jain\n+91 9667012345\nu@example.com'
+  formatContact({ name: 'Rahul Sharma', dial: '+91', phone: '9876543210', email: 'u@example.com' }),
+  'Rahul Sharma\n+91 9876543210\nu@example.com',
+  'plain three-line message — WhatsApp permission is the workflow turn, not this form'
 );
 assert.equal(
-  formatContact({ name: 'Utsav Jain', dial: '+91', phone: '9667012345', email: '  ' }),
-  'Utsav Jain\n+91 9667012345',
+  formatContact({ name: 'Rahul Sharma', dial: '+91', phone: '9876543210', email: '  ' }),
+  'Rahul Sharma\n+91 9876543210',
   'the email line is dropped when blank — their funnel does not chase it'
 );
 assert.equal(
@@ -96,7 +97,7 @@ assert.equal(
 );
 
 // --- validation ------------------------------------------------------------------------------
-const ok = { name: 'Utsav', dial: '+91', phone: '9667012345', email: '' };
+const ok = { name: 'Rahul', dial: '+91', phone: '9876543210', email: '' };
 assert.equal(contactError(ok), null, 'a valid Indian number passes');
 assert.match(contactError({ ...ok, name: ' ' }), /name/i);
 assert.match(contactError({ ...ok, phone: '' }), /mobile/i);

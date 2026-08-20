@@ -1,6 +1,3 @@
-# The single .gitignore for the repo. frontend/ and backend/ deliberately have none
-# of their own, so every rule is visible in one place.
-
 # Dependencies
 node_modules
 
@@ -12,7 +9,7 @@ node_modules
 # impossible to track.
 frontend/dist
 _source
-.vite
+.vite`  `
 
 # NOTE: frontend/kb-corpus.txt is deliberately NOT ignored, though it is generated
 # output. It is the entire text a public-facing insurance assistant answers from, so

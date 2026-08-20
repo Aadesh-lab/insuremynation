@@ -13,7 +13,7 @@
  * Every other turn in the funnel offers `- ` option lines, which become chips. This one does
  * not, so without help the visitor faces a bare keyboard and types three kinds of data into
  * one box — at the exact moment the conversation is capturing the thing it exists for. The
- * observed reply was "utsav jain / 9667012345": no email, no country code, lowercase name.
+ * observed reply was "rahul sharma / 9876543210": no email, no country code, lowercase name.
  *
  * This is pure so it can be checked without a browser: `node scripts/check-contact-ask.mjs`.
  *
@@ -41,7 +41,7 @@ export function isContactAsk(text) {
   if (CONSENT.test(s)) return true;
 
   // Otherwise all three have to be asked for together, and it has to be a question — "Thanks,
-  // Utsav!" mentions a name but asks for nothing.
+  // Rahul!" mentions a name but asks for nothing.
   return s.includes('?') && WANTS_NAME.test(s) && WANTS_PHONE.test(s) && WANTS_EMAIL.test(s);
 }
 

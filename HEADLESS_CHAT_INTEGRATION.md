@@ -75,7 +75,8 @@ Starts a conversation. Creates the run, executes the opening turn, returns the g
   "session_token": "wcs_xxxxxxxxxxxxxxxxxxxx",
   "run_id": 48213,
   "config": { "settings": { }, "footer_enabled": true },
-  "opening_message": "Hi! I'm the InsureNation assistant.\n\nHappy to help you with health cover…"
+  "opening_message": "Hi! I'm the InsureNation assistant.\n\nHappy to help you with health cover…",
+  "options": []
 }
 ```
 
@@ -84,17 +85,25 @@ your CRM use to find this exact conversation when something looks wrong.
 
 `opening_message` can be `null` in an edge case; render nothing rather than an empty bubble.
 
+`options` is the tappable-choice list for this turn — usually empty on the opening turn, but
+render it if it arrives. See *Tappable options*.
+
 ### 3. `POST /widget-proxy/message`
 
 One visitor message, one assistant reply.
 
 ```json
-{ "session_token": "wcs_xxxxxxxxxxxxxxxxxxxx", "text": "Family floater - me, spouse and kids" }
+{
+  "session_token": "wcs_xxxxxxxxxxxxxxxxxxxx",
+  "text": "Family floater - me, spouse and kids",
+  "reply_id": null
+}
 ```
 
 ```json
 200 {
   "assistant_text": "Got it. And the age of the eldest person to be covered?\n\n- 18 to 35\n- 36 to 50\n…",
+  "options": [],
   "finished": false,
   "session_expired": false
 }
@@ -102,6 +111,10 @@ One visitor message, one assistant reply.
 
 `text` must be non-empty. No server-side maximum is enforced; cap it around 2000
 characters client-side so a paste accident doesn't become an expensive turn.
+
+`reply_id` is `null` when the visitor typed, and the tapped option's `id` when they tapped
+one of the `options` the previous response carried. It is optional in the schema and
+mandatory in practice — see below.
 
 ## Context variables — do not skip this
 
@@ -159,18 +172,19 @@ in it: it comes from the browser.
 
 ## Minimal working client
 
-Complete and dependency-free. Wire your UI to the three callbacks.
+Complete and dependency-free. Wire your UI to the four callbacks.
 
 ```js
 const BASE = 'https://orchestrator.imagine.bo';
 const TOKEN = 'wgt_slc4VUonB2plFt7lX_JoPzfExlKRe69TGKEbV-ipqzQ';
 
 class InsureNationChat {
-  constructor({ onMessage, onError, onFinished }) {
+  constructor({ onMessage, onOptions, onError, onFinished }) {
     this.sessionToken = null;
     this.finished = false;
     this.busy = false;
     this.onMessage = onMessage;   // (role, text) => void
+    this.onOptions = onOptions;   // (options) => void — [] clears the button set
     this.onError = onError;       // (userFacingMessage) => void
     this.onFinished = onFinished; // () => void
   }
@@ -206,9 +220,13 @@ class InsureNationChat {
     this.runId = data.run_id;
     this.finished = false;
     if (data.opening_message) this.onMessage('assistant', data.opening_message);
+    this.onOptions(data.options || []);
   }
 
-  async send(text) {
+  // `replyId` is the tapped option's id, and null when the visitor typed. Send it
+  // whenever a tap produced the text: on a consent option it is what records the
+  // consent, and without it the tap is just a sentence.
+  async send(text, replyId = null) {
     text = (text || '').trim();
     if (!text || this.busy) return;
     if (this.finished) await this.restart();
@@ -216,11 +234,13 @@ class InsureNationChat {
     if (!this.sessionToken) return;
 
     this.busy = true;
+    this.onOptions([]);          // a taken — or ignored — choice stops applying
     this.onMessage('user', text);
     try {
       let { status, data } = await this.post('message', {
         session_token: this.sessionToken,
         text,
+        reply_id: replyId || null,
       });
 
       // Idled out server-side: start a fresh conversation and resend once.
@@ -231,6 +251,7 @@ class InsureNationChat {
         ({ status, data } = await this.post('message', {
           session_token: this.sessionToken,
           text,
+          reply_id: null,        // the new session never offered that option
         }));
       }
 
@@ -239,6 +260,7 @@ class InsureNationChat {
         return;
       }
       if (data.assistant_text) this.onMessage('assistant', data.assistant_text);
+      this.onOptions(data.options || []);
       if (data.finished) {
         this.finished = true;
         this.sessionToken = null;
@@ -264,7 +286,28 @@ class InsureNationChat {
 ```
 
 Send exactly one message at a time. The `busy` guard matters: each turn runs a model call
-server-side, and two in flight will interleave and confuse the funnel.
+server-side, two in flight will interleave and confuse the funnel — and on a consent question
+two turns read as two answers.
+
+## Shape of the conversation
+
+Worth knowing so your UI does not fight it. A typical website chat runs:
+
+1. **Greeting.** On a product page it opens with the first qualification question; on the
+   home page or an info page it asks which cover they want.
+2. **Contact.** Name, mobile and email in one message, with a consent line. Early, so a
+   lead exists in the CRM from here on — a refusal is fine and the chat continues.
+3. **Five questions**, one per turn, each with its own option lines.
+4. **Summary**, then "would you like an adviser to call you back?"
+5. **Close** — callback confirmed, handover to phone/email, or a graceful goodbye.
+   `finished: true` arrives here.
+
+Once the number is known the assistant may also ask permission to follow up on **WhatsApp**,
+and that ask arrives as `options` rather than as a question to type an answer to — never as a
+typed "yes". The tap is the consent record, so it has to be echoed back with its `reply_id`.
+See *Tappable options*.
+
+Claims enquiries and job enquiries branch off after step 2 and skip the questions.
 
 ## Conversation lifecycle
 
@@ -288,7 +331,8 @@ duplicate lead.
 
 **`session_expired: true`** means the token is unknown or the session went idle. The idle
 window is **30 minutes**, sliding — it resets on every message. Re-init and resend once, as
-the reference client does; the visitor sees a small pause rather than an error.
+the reference client does; the visitor sees a small pause rather than an error. Drop the
+`reply_id` on that resend — it belonged to the session that just went away.
 
 Each session is one run and one lead. A visitor who finishes, then messages again an hour
 later, is a second run — that is intended, not a bug.
@@ -307,6 +351,9 @@ renderer, because nothing in the output is markdown.
 the request is in flight; a turn typically takes a couple of seconds.
 
 ### Turning option lines into chips
+
+Only for turns that arrive with an **empty `options` array**. When `options` is populated,
+render those instead and ignore the heuristic below — see *Tappable options*.
 
 The assistant presents choices as lines beginning with `- ` at the end of a message, e.g.:
 
@@ -347,6 +394,105 @@ least two options before rendering chips, keep the free-text composer available 
 times, and if the parse finds nothing just show the message as-is. Never *only* show chips —
 a visitor must always be able to type "we are four in Gurgaon" instead.
 
+## Tappable options — and why consent depends on them
+
+Both `init` and `message` return an `options` array. Unlike the `- ` lines above it is not a
+heuristic: these are real choices declared server-side for this turn, and the id you echo
+back is how the server knows which one was picked.
+
+```json
+200 {
+  "assistant_text": "Shall I send the plan details to you on WhatsApp?",
+  "options": [
+    { "id": "wa_yes", "title": "Yes, message me", "description": "We'll send it to the number you gave" },
+    { "id": "wa_no",  "title": "No thanks" }
+  ],
+  "finished": false,
+  "session_expired": false
+}
+```
+
+Rendering one is two lines of contract:
+
+1. Draw a button per option, labelled `title`, with `description` as a sub-label when present.
+2. On tap, `POST /widget-proxy/message` with `text` = that option's **`title`** and
+   `reply_id` = that option's **`id`**.
+
+The `title` is what lands in the transcript, so the conversation still reads naturally; the
+`id` is what carries meaning.
+
+**An option can mean more than its words, and that is why `reply_id` is not optional in
+practice.** Some options record the visitor's **consent to be contacted on WhatsApp** — the
+tap *is* the consent record. Send the title without the `reply_id` and the assistant still
+replies sensibly, because it reads the words; but nothing is recorded, no audit row is
+written, and the follow-up the whole funnel exists to earn cannot go out. It fails silently
+and looks fine. Send the `reply_id`.
+
+What a matched tap does server-side, before the next turn runs:
+
+- writes an append-only row to the consent log — number, granted or denied, the question they
+  were answering, the option title, the page URL, the timestamp;
+- annotates the run, so the consent shows beside the transcript in reporting;
+- puts `messaging_consent`, `messaging_consent_at` and `messaging_consent_channel` on the
+  run, which is how the CRM receives it along with the rest of the lead.
+
+Consent here is **recorded, not enforced**: the send itself is your CRM's decision, made
+against the consent log and the opt-out list, not something this chat triggers. A visitor who
+agrees, changes their mind, then agrees again leaves three rows; the newest one is the answer.
+
+Notes that will save you a bug:
+
+- **Only `id`, `title` and `description` ever reach the browser.** What an option *means* —
+  the consent flag, any context it sets — stays server-side and is resolved from the id, so a
+  tampered payload can only ever name an option that was genuinely offered. Do not invent ids
+  of your own, and do not attach a `reply_id` to something the visitor typed.
+- **A typed answer is a valid answer.** If the visitor ignores the buttons and types, send
+  `reply_id: null` — the offered options simply stop applying. Keep the composer enabled the
+  whole time options are on screen.
+- **Clear the option set the moment one is tapped**, and disable all of them on the first tap.
+  A double-tap on a consent question otherwise sends two turns, which reads as two answers.
+- **Options belong to the turn that returned them.** Replace them on every reply and never
+  send a `reply_id` from an older turn. An unrecognised `reply_id` is not an error — the turn
+  runs normally and the tap is silently ignored, which is precisely the failure to avoid.
+- **On a `session_expired` retry, drop the `reply_id`** (resend with `null`). The fresh session
+  never offered that option, so the id would resolve to nothing.
+- **Website consent can be filed a beat late, by design.** The visitor's number is extracted
+  from the conversation rather than handed over by a phone network, so a tap that lands before
+  the number does is held as pending and written on a later turn. Nothing for you to
+  implement — just don't read "no consent row yet" as a failure the instant after the tap.
+
+The reference client above already has the send path for both cases — `send(text, replyId)` —
+so a tap handler is the whole of it:
+
+```js
+const chat = new InsureNationChat({
+  onMessage: renderBubble,
+  onOptions: renderOptions,   // ([]) removes the button set from the DOM
+  onError: renderError,
+  onFinished: closeComposer,
+});
+
+function renderOptions(options) {
+  clearOptions();                             // called with [] on every turn too
+  options.forEach((option) => {
+    const btn = buttonFor(option);            // title + optional description
+    btn.addEventListener('click', () => {
+      disableAll();                           // one tap, one turn
+      chat.send(option.title, option.id);     // label as text, id as reply_id
+    });
+    optionsContainer.appendChild(btn);
+  });
+}
+
+// typing instead of tapping is a valid answer — no reply_id
+onComposerSubmit((text) => chat.send(text));
+```
+
+**Sentinels never reach you.** The options are stripped out of the reply text server-side,
+along with any other marker block (`[[BUTTONS]]`, `[[IMAGE]]`, `[[POLL]]`, or a malformed
+one). If you ever see a literal `[[` in `assistant_text`, that is a bug on our side — send us
+the `run_id`.
+
 ## Errors
 
 Show the difference. The hosted widget we replaced flattened everything to "Something went
@@ -361,6 +507,7 @@ wrong", and a visitor cannot tell a domain misconfiguration from a dropped conne
 | `5xx` | upstream or model failure | "The assistant is unavailable right now." | yes |
 | network / timeout | connection dropped | "Please check your connection and try again." | yes |
 | `200` with empty `assistant_text` | the turn produced nothing | "I don't have an answer for that. Please try rephrasing." | yes |
+| `200` after an unknown `reply_id` | the tap matched no offered option — it is ignored, **not** an error, and any consent it carried is lost | nothing — the reply is real | no — fix the client |
 
 ```js
 function errorText(status) {
@@ -393,9 +540,20 @@ show the phone number `+91 99101 69789` and `nehal@insuremynation.com`.
 - **The assistant will not quote a premium**, a waiting period, an eligibility decision or
   an IDV figure — by design, because none of it exists in its knowledge base and an invented
   figure is quotable back at the firm. Don't build UI that implies a quote is coming.
-- **It asks for a name and mobile number exactly once**, at the end, with a consent line in
-  the same message. Don't add your own contact form mid-conversation; you'll ask twice and
-  the lead is captured either way.
+- **It asks for name, mobile and email early** — in the second or third turn, right after
+  the visitor's cover is known, not at the end. Don't add your own contact form anywhere in
+  the flow; you will ask twice, and the lead is captured either way.
+- **A visitor who refuses that ask keeps going.** The assistant carries straight on into the
+  questions and asks once more only at the close. So do not treat "no contact details yet"
+  as a dead conversation, and do not block the composer or nag on your side.
+- Email is deliberately not chased — a visitor who gives a name and a number gets their
+  callback confirmed, so don't build UI that treats a missing email as an incomplete lead.
+- **Dropping `reply_id` breaks consent silently.** No error, no empty reply, a sensible-looking
+  conversation — and no consent row, so the WhatsApp follow-up never goes out. If you render
+  `options` at all, echo the id. See *Tappable options*.
+- **Don't render `options` as read-only text and let the visitor type the answer.** The words
+  reach the assistant either way, but only a tap carries the id, and only the id records
+  anything.
 
 ## Test checklist
 
@@ -406,8 +564,10 @@ show the phone number `+91 99101 69789` and `nehal@insuremynation.com`.
 3. Open on `/about` → "Which cover are you looking for?" with six option lines.
 4. Land on `/health-insurance?utm_source=test`, browse to `/about`, then open the chat →
    `landed_from` is still `utm_source=test`.
-5. Answer five questions, accept the callback, give a name and number → `finished: true`
-   arrives and the composer closes.
+5. Answer five questions, accept the callback → `finished: true` arrives and the composer
+   closes. You are not asked for your details a second time; the early ask covered it.
+5a. Run it again and **refuse** the contact ask → the questions continue anyway, and you
+   are asked once more only at the close. A stalled funnel here is a bug worth reporting.
 6. Send to that finished session → `session_expired`, and your client starts a fresh
    conversation rather than erroring.
 7. Idle 31 minutes, then send → same graceful restart.
@@ -416,8 +576,17 @@ show the phone number `+91 99101 69789` and `nehal@insuremynation.com`.
 10. Confirm no asterisks, `**`, or raw `\n` characters appear anywhere in the rendered
     transcript.
 11. Double-click send fast → only one turn is sent.
+12. Reach the WhatsApp permission ask → it arrives with a populated `options` array, your UI
+    draws buttons, and the reply text contains no `[[` markup.
+13. Tap "Yes" on it → give us the `run_id` and we will confirm the consent row was written
+    with the option title and page URL. Run it again typing "yes" instead of tapping: the
+    conversation carries on the same, and there is deliberately **no** row — that is the
+    failure mode this test exists to catch.
+14. Tap an option, then idle 31 minutes and tap another → graceful restart, no error, and the
+    stale `reply_id` is not sent.
 
 ## Support
 
 Give us the `run_id` from `init`. Every conversation is reportable end to end by that id —
-what the visitor typed, what was captured, and whether the lead reached the CRM.
+what the visitor typed, what was captured, whether a consent was recorded against it, and
+whether the lead reached the CRM.
